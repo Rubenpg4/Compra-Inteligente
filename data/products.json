@@ -1,0 +1,809 @@
+{
+  "meta": {
+    "generated_at": "2026-01-16T10:59:40.473Z",
+    "total_products": 50,
+    "categories": [
+      "cereals",
+      "dairy",
+      "drinks",
+      "snacks"
+    ],
+    "products_per_category": {
+      "cereals": 11,
+      "dairy": 13,
+      "drinks": 13,
+      "snacks": 13
+    },
+    "nutriscore_distribution": {
+      "A": 15,
+      "B": 9,
+      "C": 11,
+      "D": 10,
+      "E": 5
+    }
+  },
+  "products": [
+    {
+      "id": 31,
+      "code": "DRY-005",
+      "name": "Yogur Griego",
+      "brand": "Oikos",
+      "category": "dairy",
+      "image": null,
+      "nutriscore": "B",
+      "quantity": "4x110g",
+      "keywords": [
+        "yogur",
+        "griego",
+        "cremoso",
+        "proteina"
+      ]
+    },
+    {
+      "id": 7,
+      "code": "SNK-007",
+      "name": "Frutos Secos Mix",
+      "brand": "Borges",
+      "category": "snacks",
+      "image": null,
+      "nutriscore": "A",
+      "quantity": "200g",
+      "keywords": [
+        "frutos secos",
+        "nueces",
+        "almendras",
+        "natural"
+      ]
+    },
+    {
+      "id": 20,
+      "code": "DRK-007",
+      "name": "Zumo Multifrutas",
+      "brand": "Don Simon",
+      "category": "drinks",
+      "image": null,
+      "nutriscore": "C",
+      "quantity": "1L",
+      "keywords": [
+        "zumo",
+        "multifrutas",
+        "vitaminas"
+      ]
+    },
+    {
+      "id": 28,
+      "code": "DRY-002",
+      "name": "Leche sin Lactosa",
+      "brand": "Kaiku",
+      "category": "dairy",
+      "image": null,
+      "nutriscore": "A",
+      "quantity": "1L",
+      "keywords": [
+        "leche",
+        "sin lactosa",
+        "digestiva"
+      ]
+    },
+    {
+      "id": 26,
+      "code": "DRK-013",
+      "name": "Agua Mineral Natural",
+      "brand": "Bezoya",
+      "category": "drinks",
+      "image": null,
+      "nutriscore": "A",
+      "quantity": "1.5L",
+      "keywords": [
+        "agua",
+        "mineral",
+        "natural",
+        "hidratacion"
+      ]
+    },
+    {
+      "id": 41,
+      "code": "CRL-002",
+      "name": "Muesli con Frutas",
+      "brand": "Kelloggs",
+      "category": "cereals",
+      "image": null,
+      "nutriscore": "B",
+      "quantity": "500g",
+      "keywords": [
+        "muesli",
+        "frutas",
+        "avena",
+        "pasas"
+      ]
+    },
+    {
+      "id": 18,
+      "code": "DRK-005",
+      "name": "Refresco de Cola Zero",
+      "brand": "Coca-Cola",
+      "category": "drinks",
+      "image": null,
+      "nutriscore": "B",
+      "quantity": "2L",
+      "keywords": [
+        "refresco",
+        "cola",
+        "zero",
+        "sin azucar"
+      ]
+    },
+    {
+      "id": 35,
+      "code": "DRY-009",
+      "name": "Leche Desnatada",
+      "brand": "Puleva",
+      "category": "dairy",
+      "image": null,
+      "nutriscore": "A",
+      "quantity": "1L",
+      "keywords": [
+        "leche",
+        "desnatada",
+        "light",
+        "0%"
+      ]
+    },
+    {
+      "id": 50,
+      "code": "CRL-011",
+      "name": "Arroz Inflado con Miel",
+      "brand": "Special K",
+      "category": "cereals",
+      "image": null,
+      "nutriscore": "C",
+      "quantity": "375g",
+      "keywords": [
+        "arroz",
+        "miel",
+        "ligero"
+      ]
+    },
+    {
+      "id": 10,
+      "code": "SNK-010",
+      "name": "Barritas de Cereales",
+      "brand": "Hero",
+      "category": "snacks",
+      "image": null,
+      "nutriscore": "B",
+      "quantity": "6x25g",
+      "keywords": [
+        "barritas",
+        "cereales",
+        "muesli",
+        "avena"
+      ]
+    },
+    {
+      "id": 44,
+      "code": "CRL-005",
+      "name": "Cereales con Almendras",
+      "brand": "Alpen",
+      "category": "cereals",
+      "image": null,
+      "nutriscore": "B",
+      "quantity": "550g",
+      "keywords": [
+        "cereales",
+        "almendras",
+        "muesli"
+      ]
+    },
+    {
+      "id": 14,
+      "code": "DRK-001",
+      "name": "Refresco de Limon",
+      "brand": "Fanta",
+      "category": "drinks",
+      "image": null,
+      "nutriscore": "E",
+      "quantity": "2L",
+      "keywords": [
+        "refresco",
+        "limon",
+        "citrico",
+        "gas"
+      ]
+    },
+    {
+      "id": 47,
+      "code": "CRL-008",
+      "name": "Granola Crujiente",
+      "brand": "Jordans",
+      "category": "cereals",
+      "image": null,
+      "nutriscore": "B",
+      "quantity": "400g",
+      "keywords": [
+        "granola",
+        "avena",
+        "miel",
+        "nueces"
+      ]
+    },
+    {
+      "id": 39,
+      "code": "DRY-013",
+      "name": "Queso en Lonchas",
+      "brand": "El Caserio",
+      "category": "dairy",
+      "image": null,
+      "nutriscore": "C",
+      "quantity": "200g",
+      "keywords": [
+        "queso",
+        "lonchas",
+        "sandwich"
+      ]
+    },
+    {
+      "id": 19,
+      "code": "DRK-006",
+      "name": "Refresco de Cola",
+      "brand": "Coca-Cola",
+      "category": "drinks",
+      "image": null,
+      "nutriscore": "E",
+      "quantity": "2L",
+      "keywords": [
+        "refresco",
+        "cola",
+        "gas",
+        "azucar"
+      ]
+    },
+    {
+      "id": 27,
+      "code": "DRY-001",
+      "name": "Leche Semidesnatada",
+      "brand": "Central Lechera",
+      "category": "dairy",
+      "image": null,
+      "nutriscore": "A",
+      "quantity": "1L",
+      "keywords": [
+        "leche",
+        "semidesnatada",
+        "ligera"
+      ]
+    },
+    {
+      "id": 34,
+      "code": "DRY-008",
+      "name": "Margarina Ligera",
+      "brand": "Flora",
+      "category": "dairy",
+      "image": null,
+      "nutriscore": "C",
+      "quantity": "250g",
+      "keywords": [
+        "margarina",
+        "ligera",
+        "omega 3"
+      ]
+    },
+    {
+      "id": 17,
+      "code": "DRK-004",
+      "name": "Bebida Energetica",
+      "brand": "Red Bull",
+      "category": "drinks",
+      "image": null,
+      "nutriscore": "E",
+      "quantity": "250ml",
+      "keywords": [
+        "energetica",
+        "cafeina",
+        "taurina"
+      ]
+    },
+    {
+      "id": 38,
+      "code": "DRY-012",
+      "name": "Nata para Cocinar",
+      "brand": "Pascual",
+      "category": "dairy",
+      "image": null,
+      "nutriscore": "D",
+      "quantity": "200ml",
+      "keywords": [
+        "nata",
+        "cocinar",
+        "crema",
+        "salsas"
+      ]
+    },
+    {
+      "id": 46,
+      "code": "CRL-007",
+      "name": "Corn Flakes",
+      "brand": "Kelloggs",
+      "category": "cereals",
+      "image": null,
+      "nutriscore": "B",
+      "quantity": "500g",
+      "keywords": [
+        "corn flakes",
+        "maiz",
+        "crujiente",
+        "clasico"
+      ]
+    },
+    {
+      "id": 5,
+      "code": "SNK-005",
+      "name": "Galletas Digestive",
+      "brand": "Fontaneda",
+      "category": "snacks",
+      "image": null,
+      "nutriscore": "C",
+      "quantity": "400g",
+      "keywords": [
+        "galletas",
+        "digestive",
+        "fibra",
+        "integral"
+      ]
+    },
+    {
+      "id": 4,
+      "code": "SNK-004",
+      "name": "Crackers Integrales",
+      "brand": "Wasa",
+      "category": "snacks",
+      "image": null,
+      "nutriscore": "A",
+      "quantity": "275g",
+      "keywords": [
+        "crackers",
+        "integral",
+        "fibra",
+        "tostadas"
+      ]
+    },
+    {
+      "id": 16,
+      "code": "DRK-003",
+      "name": "Refresco de Naranja",
+      "brand": "Fanta",
+      "category": "drinks",
+      "image": null,
+      "nutriscore": "E",
+      "quantity": "2L",
+      "keywords": [
+        "refresco",
+        "naranja",
+        "gas"
+      ]
+    },
+    {
+      "id": 12,
+      "code": "SNK-012",
+      "name": "Palomitas de Maiz",
+      "brand": "Act II",
+      "category": "snacks",
+      "image": null,
+      "nutriscore": "C",
+      "quantity": "100g",
+      "keywords": [
+        "palomitas",
+        "maiz",
+        "microondas"
+      ]
+    },
+    {
+      "id": 36,
+      "code": "DRY-010",
+      "name": "Mantequilla",
+      "brand": "President",
+      "category": "dairy",
+      "image": null,
+      "nutriscore": "D",
+      "quantity": "250g",
+      "keywords": [
+        "mantequilla",
+        "grasa",
+        "untar"
+      ]
+    },
+    {
+      "id": 3,
+      "code": "SNK-003",
+      "name": "Patatas Fritas Campesinas",
+      "brand": "Ruffles",
+      "category": "snacks",
+      "image": null,
+      "nutriscore": "D",
+      "quantity": "170g",
+      "keywords": [
+        "patatas",
+        "onduladas",
+        "crujiente"
+      ]
+    },
+    {
+      "id": 11,
+      "code": "SNK-011",
+      "name": "Almendras Tostadas",
+      "brand": "Hacendado",
+      "category": "snacks",
+      "image": null,
+      "nutriscore": "A",
+      "quantity": "150g",
+      "keywords": [
+        "almendras",
+        "tostadas",
+        "proteina"
+      ]
+    },
+    {
+      "id": 9,
+      "code": "SNK-009",
+      "name": "Gusanitos de Maiz",
+      "brand": "Cheetos",
+      "category": "snacks",
+      "image": null,
+      "nutriscore": "D",
+      "quantity": "96g",
+      "keywords": [
+        "gusanitos",
+        "maiz",
+        "queso",
+        "infantil"
+      ]
+    },
+    {
+      "id": 48,
+      "code": "CRL-009",
+      "name": "Cereales de Chocolate",
+      "brand": "Chocapic",
+      "category": "cereals",
+      "image": null,
+      "nutriscore": "D",
+      "quantity": "375g",
+      "keywords": [
+        "cereales",
+        "chocolate",
+        "infantil"
+      ]
+    },
+    {
+      "id": 33,
+      "code": "DRY-007",
+      "name": "Queso Fresco",
+      "brand": "Burgos",
+      "category": "dairy",
+      "image": null,
+      "nutriscore": "A",
+      "quantity": "250g",
+      "keywords": [
+        "queso",
+        "fresco",
+        "ligero",
+        "proteina"
+      ]
+    },
+    {
+      "id": 8,
+      "code": "SNK-008",
+      "name": "Tortitas de Maiz",
+      "brand": "Bicentury",
+      "category": "snacks",
+      "image": null,
+      "nutriscore": "A",
+      "quantity": "130g",
+      "keywords": [
+        "maiz",
+        "tortitas",
+        "ligero",
+        "sin gluten"
+      ]
+    },
+    {
+      "id": 42,
+      "code": "CRL-003",
+      "name": "Cereales de Arroz",
+      "brand": "Rice Krispies",
+      "category": "cereals",
+      "image": null,
+      "nutriscore": "C",
+      "quantity": "340g",
+      "keywords": [
+        "arroz",
+        "inflado",
+        "crujiente"
+      ]
+    },
+    {
+      "id": 45,
+      "code": "CRL-006",
+      "name": "Cereales Integrales",
+      "brand": "All Bran",
+      "category": "cereals",
+      "image": null,
+      "nutriscore": "A",
+      "quantity": "450g",
+      "keywords": [
+        "cereales",
+        "integral",
+        "fibra",
+        "digestivo"
+      ]
+    },
+    {
+      "id": 6,
+      "code": "SNK-006",
+      "name": "Galletas de Chocolate",
+      "brand": "Oreo",
+      "category": "snacks",
+      "image": null,
+      "nutriscore": "E",
+      "quantity": "154g",
+      "keywords": [
+        "galletas",
+        "chocolate",
+        "dulce",
+        "rellenas"
+      ]
+    },
+    {
+      "id": 49,
+      "code": "CRL-010",
+      "name": "Copos de Trigo",
+      "brand": "Weetabix",
+      "category": "cereals",
+      "image": null,
+      "nutriscore": "A",
+      "quantity": "430g",
+      "keywords": [
+        "trigo",
+        "integral",
+        "fibra",
+        "british"
+      ]
+    },
+    {
+      "id": 15,
+      "code": "DRK-002",
+      "name": "Bebida Isotonica",
+      "brand": "Aquarius",
+      "category": "drinks",
+      "image": null,
+      "nutriscore": "C",
+      "quantity": "1.5L",
+      "keywords": [
+        "isotonica",
+        "deporte",
+        "limon",
+        "hidratacion"
+      ]
+    },
+    {
+      "id": 13,
+      "code": "SNK-013",
+      "name": "Nachos Tex-Mex",
+      "brand": "Doritos",
+      "category": "snacks",
+      "image": null,
+      "nutriscore": "D",
+      "quantity": "150g",
+      "keywords": [
+        "nachos",
+        "maiz",
+        "picante",
+        "mexicano"
+      ]
+    },
+    {
+      "id": 37,
+      "code": "DRY-011",
+      "name": "Queso Manchego Curado",
+      "brand": "Garcia Baquero",
+      "category": "dairy",
+      "image": null,
+      "nutriscore": "D",
+      "quantity": "250g",
+      "keywords": [
+        "queso",
+        "manchego",
+        "curado",
+        "oveja"
+      ]
+    },
+    {
+      "id": 2,
+      "code": "SNK-002",
+      "name": "Patatas Fritas Clasicas",
+      "brand": "Lays",
+      "category": "snacks",
+      "image": null,
+      "nutriscore": "D",
+      "quantity": "150g",
+      "keywords": [
+        "patatas",
+        "fritas",
+        "aperitivo",
+        "salado"
+      ]
+    },
+    {
+      "id": 25,
+      "code": "DRK-012",
+      "name": "Batido de Chocolate",
+      "brand": "Puleva",
+      "category": "drinks",
+      "image": null,
+      "nutriscore": "C",
+      "quantity": "1L",
+      "keywords": [
+        "batido",
+        "chocolate",
+        "leche",
+        "cacao"
+      ]
+    },
+    {
+      "id": 22,
+      "code": "DRK-009",
+      "name": "Agua con Gas",
+      "brand": "Perrier",
+      "category": "drinks",
+      "image": null,
+      "nutriscore": "A",
+      "quantity": "750ml",
+      "keywords": [
+        "agua",
+        "gas",
+        "sparkling",
+        "burbujas"
+      ]
+    },
+    {
+      "id": 23,
+      "code": "DRK-010",
+      "name": "Te Frio al Melocoton",
+      "brand": "Lipton",
+      "category": "drinks",
+      "image": null,
+      "nutriscore": "D",
+      "quantity": "1.5L",
+      "keywords": [
+        "te",
+        "melocoton",
+        "frio"
+      ]
+    },
+    {
+      "id": 21,
+      "code": "DRK-008",
+      "name": "Zumo de Naranja",
+      "brand": "Tropicana",
+      "category": "drinks",
+      "image": null,
+      "nutriscore": "C",
+      "quantity": "1L",
+      "keywords": [
+        "zumo",
+        "naranja",
+        "vitamina c",
+        "natural"
+      ]
+    },
+    {
+      "id": 24,
+      "code": "DRK-011",
+      "name": "Te Frio al Limon",
+      "brand": "Nestea",
+      "category": "drinks",
+      "image": null,
+      "nutriscore": "D",
+      "quantity": "1.5L",
+      "keywords": [
+        "te",
+        "limon",
+        "frio",
+        "refresco"
+      ]
+    },
+    {
+      "id": 29,
+      "code": "DRY-003",
+      "name": "Yogur Natural",
+      "brand": "Danone",
+      "category": "dairy",
+      "image": null,
+      "nutriscore": "A",
+      "quantity": "4x125g",
+      "keywords": [
+        "yogur",
+        "natural",
+        "probioticos"
+      ]
+    },
+    {
+      "id": 40,
+      "code": "CRL-001",
+      "name": "Copos de Avena",
+      "brand": "Quaker",
+      "category": "cereals",
+      "image": null,
+      "nutriscore": "A",
+      "quantity": "500g",
+      "keywords": [
+        "avena",
+        "copos",
+        "fibra",
+        "integral"
+      ]
+    },
+    {
+      "id": 32,
+      "code": "DRY-006",
+      "name": "Yogur de Fresa",
+      "brand": "Activia",
+      "category": "dairy",
+      "image": null,
+      "nutriscore": "B",
+      "quantity": "4x120g",
+      "keywords": [
+        "yogur",
+        "fresa",
+        "frutas",
+        "bifidus"
+      ]
+    },
+    {
+      "id": 1,
+      "code": "SNK-001",
+      "name": "Cacahuetes Salados",
+      "brand": "MisterCorn",
+      "category": "snacks",
+      "image": null,
+      "nutriscore": "C",
+      "quantity": "200g",
+      "keywords": [
+        "cacahuetes",
+        "salado",
+        "aperitivo"
+      ]
+    },
+    {
+      "id": 43,
+      "code": "CRL-004",
+      "name": "Cereales Fitness",
+      "brand": "Nestle",
+      "category": "cereals",
+      "image": null,
+      "nutriscore": "B",
+      "quantity": "375g",
+      "keywords": [
+        "fitness",
+        "integral",
+        "ligero",
+        "trigo"
+      ]
+    },
+    {
+      "id": 30,
+      "code": "DRY-004",
+      "name": "Leche Entera",
+      "brand": "Pascual",
+      "category": "dairy",
+      "image": null,
+      "nutriscore": "A",
+      "quantity": "1L",
+      "keywords": [
+        "leche",
+        "entera",
+        "calcio",
+        "proteina"
+      ]
+    }
+  ]
+}

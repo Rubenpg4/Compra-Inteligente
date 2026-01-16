@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demo Multimodal - Voz + Gestos</title>
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- MediaPipe Tasks Vision CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.8/vision_bundle.min.js" crossorigin="anonymous"></script>
+    <style>
+        /* Estilos adicionales para la demo */
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+        .status-off { background-color: #ef4444; }
+        .status-on { background-color: #22c55e; }
+        .status-loading { background-color: #eab308; animation: pulse 1s infinite; }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        #log-panel {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .log-entry {
+            font-family: monospace;
+            font-size: 0.75rem;
+        }
+
+        /* Ocultar video de gestos pero mantenerlo activo */
+        #gesture-video {
+            position: absolute;
+            top: -9999px;
+            left: -9999px;
+        }
+
+        /* Estilos de filtros */
+        .filter-btn {
+            background-color: #4b5563;
+            color: #9ca3af;
+            border: 2px solid transparent;
+        }
+        .filter-btn:hover {
+            background-color: #6b7280;
+            color: #fff;
+        }
+        .filter-btn-active {
+            background-color: #3b82f6;
+            color: #fff;
+            border-color: #60a5fa;
+        }
+
+        /* Colores nutriscore para filtros */
+        .filter-btn.nutri-a { border-color: #22c55e; }
+        .filter-btn.nutri-b { border-color: #84cc16; }
+        .filter-btn.nutri-c { border-color: #eab308; }
+        .filter-btn.nutri-d { border-color: #f97316; }
+        .filter-btn.nutri-e { border-color: #ef4444; }
+
+        .filter-btn.nutri-a.filter-btn-active { background-color: #22c55e; border-color: #22c55e; }
+        .filter-btn.nutri-b.filter-btn-active { background-color: #84cc16; border-color: #84cc16; }
+        .filter-btn.nutri-c.filter-btn-active { background-color: #eab308; border-color: #eab308; color: #000; }
+        .filter-btn.nutri-d.filter-btn-active { background-color: #f97316; border-color: #f97316; }
+        .filter-btn.nutri-e.filter-btn-active { background-color: #ef4444; border-color: #ef4444; }
+
+        /* Cursor de gestos */
+        #gesture-cursor {
+            position: fixed;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: rgba(59, 130, 246, 0.6);
+            border: 3px solid #3b82f6;
+            pointer-events: none;
+            z-index: 9999;
+            transform: translate(-50%, -50%);
+            transition: transform 0.05s ease-out, background 0.15s ease;
+            display: none;
+        }
+        #gesture-cursor.active {
+            display: block;
+        }
+        #gesture-cursor.pinch {
+            background: rgba(34, 197, 94, 0.8);
+            border-color: #22c55e;
+            transform: translate(-50%, -50%) scale(1.5);
+        }
+        #gesture-cursor.palm {
+            background: rgba(239, 68, 68, 0.8);
+            border-color: #ef4444;
+            transform: translate(-50%, -50%) scale(1.8);
+            border-radius: 30%;
+        }
+
+        /* Hover highlight para elementos interactivos con gesto */
+        .gesture-hover {
+            outline: 3px solid #3b82f6 !important;
+            outline-offset: 2px;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+    <div id="app" class="container mx-auto px-4 py-6">
+        <!-- Header -->
+        <header class="mb-6">
+            <h1 class="text-3xl font-bold text-center text-blue-400">Demo Multimodal</h1>
+            <p class="text-center text-gray-400 mt-2">Interaccion por Voz + Gestos</p>
+        </header>
+
+        <!-- Panel de Estado -->
+        <section id="status-panel" class="bg-gray-800 rounded-lg p-4 mb-6">
+            <h2 class="text-lg font-semibold mb-3 text-blue-300">Estado del Sistema</h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="flex items-center gap-2">
+                    <span id="status-camera" class="status-indicator status-off"></span>
+                    <span class="text-sm">Camara</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span id="status-mic" class="status-indicator status-off"></span>
+                    <span class="text-sm">Microfono</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span id="status-model" class="status-indicator status-off"></span>
+                    <span class="text-sm">Modelo ML</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span id="status-voice" class="status-indicator status-off"></span>
+                    <span class="text-sm">Voz Activa</span>
+                </div>
+            </div>
+            <!-- Boton Iniciar Demo -->
+            <div class="mt-4 text-center">
+                <button id="btn-start-demo"
+                    class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg transition-colors">
+                    Iniciar Demo
+                </button>
+            </div>
+        </section>
+
+        <!-- Contenido Principal - SPA Views -->
+        <main id="main-content" class="bg-gray-800 rounded-lg p-4 mb-6 min-h-[400px]">
+            <!-- BROWSE View (default) -->
+            <div id="view-browse" class="view">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-4">
+                    <div>
+                        <h2 class="text-xl font-semibold text-green-400">Catalogo de Productos</h2>
+                        <p class="text-gray-400 text-sm">Di "ver producto [nombre]" o haz gesto de seleccionar</p>
+                    </div>
+                    <div id="products-count" class="text-gray-400 text-sm"></div>
+                </div>
+
+                <!-- Filtros -->
+                <div id="filters-panel" class="bg-gray-700 rounded-lg p-4 mb-4">
+                    <div class="flex flex-col md:flex-row gap-4">
+                        <!-- Filtro Categoria -->
+                        <div class="flex-1">
+                            <label class="block text-sm text-gray-400 mb-2">Categoria</label>
+                            <div id="filter-category" class="flex flex-wrap gap-2">
+                                <button data-category="" class="filter-btn filter-btn-active px-3 py-1 rounded text-sm transition-colors">
+                                    Todas
+                                </button>
+                                <button data-category="snacks" class="filter-btn px-3 py-1 rounded text-sm transition-colors">
+                                    🍿 Snacks
+                                </button>
+                                <button data-category="drinks" class="filter-btn px-3 py-1 rounded text-sm transition-colors">
+                                    🥤 Drinks
+                                </button>
+                                <button data-category="dairy" class="filter-btn px-3 py-1 rounded text-sm transition-colors">
+                                    🥛 Dairy
+                                </button>
+                                <button data-category="cereals" class="filter-btn px-3 py-1 rounded text-sm transition-colors">
+                                    🥣 Cereals
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Filtro Nutriscore -->
+                        <div class="flex-1">
+                            <label class="block text-sm text-gray-400 mb-2">Nutriscore</label>
+                            <div id="filter-nutriscore" class="flex flex-wrap gap-2">
+                                <button data-nutriscore="" class="filter-btn filter-btn-active px-3 py-1 rounded text-sm transition-colors">
+                                    Todos
+                                </button>
+                                <button data-nutriscore="A" class="filter-btn nutri-a px-3 py-1 rounded text-sm font-bold transition-colors">
+                                    A
+                                </button>
+                                <button data-nutriscore="B" class="filter-btn nutri-b px-3 py-1 rounded text-sm font-bold transition-colors">
+                                    B
+                                </button>
+                                <button data-nutriscore="C" class="filter-btn nutri-c px-3 py-1 rounded text-sm font-bold transition-colors">
+                                    C
+                                </button>
+                                <button data-nutriscore="D" class="filter-btn nutri-d px-3 py-1 rounded text-sm font-bold transition-colors">
+                                    D
+                                </button>
+                                <button data-nutriscore="E" class="filter-btn nutri-e px-3 py-1 rounded text-sm font-bold transition-colors">
+                                    E
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Boton limpiar filtros -->
+                    <div class="mt-3 text-right">
+                        <button id="btn-clear-filters" class="text-sm text-gray-400 hover:text-white transition-colors">
+                            Limpiar filtros
+                        </button>
+                    </div>
+                </div>
+
+                <div id="products-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Products rendered dynamically -->
+                    <div class="text-center text-gray-500 py-8">
+                        Inicia la demo para cargar productos
+                    </div>
+                </div>
+            </div>
+
+            <!-- DETAILS View (hidden by default) -->
+            <div id="view-details" class="view hidden">
+                <button id="btn-back" class="text-blue-400 hover:text-blue-300 mb-4">&larr; Volver</button>
+                <div id="product-details">
+                    <!-- Product details rendered dynamically -->
+                </div>
+            </div>
+
+            <!-- CART View (hidden by default) -->
+            <div id="view-cart" class="view hidden">
+                <h2 class="text-xl font-semibold mb-4 text-yellow-400">Carrito de Compras</h2>
+                <div id="cart-items">
+                    <!-- Cart items rendered dynamically -->
+                    <p class="text-gray-500">El carrito esta vacio</p>
+                </div>
+                <div id="cart-total" class="mt-4 pt-4 border-t border-gray-700">
+                    <span class="text-lg font-bold">Total: <span id="total-amount">$0.00</span></span>
+                </div>
+            </div>
+        </main>
+
+        <!-- Panel de Log -->
+        <section id="log-section" class="bg-gray-800 rounded-lg p-4">
+            <h2 class="text-lg font-semibold mb-3 text-purple-300">Log de Eventos Multimodales</h2>
+            <div id="log-panel" class="bg-gray-900 rounded p-3 text-gray-300">
+                <div class="log-entry text-gray-500">[Sistema] Esperando inicio de demo...</div>
+            </div>
+            <button id="btn-clear-log" class="mt-2 text-sm text-gray-400 hover:text-white">
+                Limpiar log
+            </button>
+        </section>
+
+        <!-- Video oculto para captura de gestos -->
+        <video id="gesture-video" autoplay playsinline></video>
+    </div>
+
+    <!-- Cursor de gestos (overlay) -->
+    <div id="gesture-cursor"></div>
+
+    <!-- Cargar modulos ES6 -->
+    <script type="module" src="src/app.js"></script>
+</body>
+</html>
