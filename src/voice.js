@@ -18,6 +18,13 @@ import {
     NUTRISCORES
 } from './store.js';
 
+import {
+    next as coverflowNext,
+    prev as coverflowPrev,
+    selectActive as coverflowSelectActive,
+    addActiveToCart as coverflowAddToCart
+} from './components/horizontalCoverflow.js';
+
 // Instancia del reconocedor de voz
 let recognition = null;
 
@@ -156,6 +163,83 @@ function registerDefaultCommands() {
         },
         execute: () => {
             setMode(MODES.CART);
+        }
+    });
+
+    // ========================================
+    // COMANDOS DE NAVEGACION COVERFLOW
+    // ========================================
+
+    // Comando: Siguiente producto
+    registerCommand({
+        name: 'siguiente',
+        matches: (text) => {
+            return text.includes('siguiente') ||
+                   text.includes('próximo') ||
+                   text.includes('proximo') ||
+                   text.includes('avanzar') ||
+                   text.includes('adelante');
+        },
+        execute: () => {
+            console.log('[Voice] Ejecutando comando SIGUIENTE');
+            const state = getState();
+            console.log('[Voice] Estado:', state.currentMode, 'Filtros:', state.filters);
+            // Solo funciona en modo browse con filtros activos (coverflow)
+            if (state.currentMode === MODES.BROWSE &&
+                (state.filters?.category || state.filters?.nutriscore)) {
+                const result = coverflowNext();
+                console.log('[Voice] coverflowNext resultado:', result);
+                addLog('voice', 'Navegando al siguiente producto');
+            } else {
+                addLog('voice', 'Comando "siguiente" solo disponible en vista filtrada');
+            }
+        }
+    });
+
+    // Comando: Anterior producto
+    registerCommand({
+        name: 'anterior',
+        matches: (text) => {
+            return text.includes('anterior') ||
+                   text.includes('previo') ||
+                   text.includes('atrás') ||
+                   text.includes('atras') ||
+                   text.includes('retroceder');
+        },
+        execute: () => {
+            const state = getState();
+            // Solo funciona en modo browse con filtros activos (coverflow)
+            if (state.currentMode === MODES.BROWSE &&
+                (state.filters?.category || state.filters?.nutriscore)) {
+                coverflowPrev();
+                addLog('voice', 'Navegando al producto anterior');
+            } else {
+                addLog('voice', 'Comando "anterior" solo disponible en vista filtrada');
+            }
+        }
+    });
+
+    // Comando: Ver detalles del producto actual
+    registerCommand({
+        name: 'ver detalles',
+        matches: (text) => {
+            return text.includes('ver detalles') ||
+                   text.includes('detalles') ||
+                   text.includes('más información') ||
+                   text.includes('mas informacion') ||
+                   text.includes('abrir producto') ||
+                   text.includes('seleccionar');
+        },
+        execute: () => {
+            const state = getState();
+            // Solo funciona en modo browse con filtros activos (coverflow)
+            if (state.currentMode === MODES.BROWSE &&
+                (state.filters?.category || state.filters?.nutriscore)) {
+                coverflowSelectActive();
+                addLog('voice', 'Abriendo detalles del producto');
+            } else {
+                addLog('voice', 'Comando "detalles" solo disponible en vista filtrada');
+            }
         }
     });
 
@@ -340,6 +424,10 @@ function registerDefaultCommands() {
             addLog('system', '- "snacks/bebidas/lacteos/cereales" - Filtrar categoria');
             addLog('system', '- "saludable" o "letra A/B/C/D/E" - Filtrar nutriscore');
             addLog('system', '- "mostrar todo" - Limpiar filtros');
+            addLog('system', '-- COVERFLOW (vista filtrada) --');
+            addLog('system', '- "siguiente" - Siguiente producto');
+            addLog('system', '- "anterior" - Producto anterior');
+            addLog('system', '- "detalles" - Ver detalles del producto');
         }
     });
 }

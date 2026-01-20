@@ -3,266 +3,1075 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Demo Multimodal - Voz + Gestos</title>
-    <!-- Tailwind CSS via CDN -->
+    <title>Compra Inteligente - Tu supermercado online</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- MediaPipe Tasks Vision CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.8/vision_bundle.min.js" crossorigin="anonymous"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* Estilos adicionales para la demo */
-        .status-indicator {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
+        * {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
         }
-        .status-off { background-color: #ef4444; }
-        .status-on { background-color: #22c55e; }
-        .status-loading { background-color: #eab308; animation: pulse 1s infinite; }
+
+        body {
+            background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #16213e 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ========== COVERFLOW STYLES ========== */
+        .coverflow-stage {
+            position: relative;
+            height: 70vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            perspective: 1200px;
+        }
+
+        .coverflow-track {
+            position: relative;
+            width: 320px;
+            height: 400px;
+            transform-style: preserve-3d;
+        }
+
+        .coverflow-card {
+            position: absolute;
+            width: 100%;
+            height: auto;
+            transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            cursor: pointer;
+            transform-style: preserve-3d;
+        }
+
+        .coverflow-active {
+            cursor: pointer;
+        }
+
+        .coverflow-active:hover {
+            transform: perspective(1000px) translateY(0) translateZ(20px) scale(1.05) rotateX(0deg) !important;
+        }
+
+        .card-inner {
+            position: relative;
+            background: linear-gradient(145deg, #2a2a4a, #1e1e3a);
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow:
+                0 25px 50px -12px rgba(0, 0, 0, 0.5),
+                0 0 0 1px rgba(255, 255, 255, 0.1);
+        }
+
+        .card-image {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 1;
+            overflow: hidden;
+        }
+
+        .card-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+
+        .coverflow-active .card-image img:hover {
+            transform: scale(1.1);
+        }
+
+        .card-reflection {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 60%;
+            background: linear-gradient(to bottom, transparent, rgba(0,0,0,0.8));
+            pointer-events: none;
+        }
+
+        .nutriscore-badge {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 16px;
+            color: white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        .card-info {
+            padding: 20px;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s ease;
+        }
+
+        .card-info.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: white;
+            margin-bottom: 4px;
+        }
+
+        .card-brand {
+            font-size: 0.9rem;
+            color: #60a5fa;
+            margin-bottom: 4px;
+        }
+
+        .card-quantity {
+            font-size: 0.8rem;
+            color: #9ca3af;
+        }
+
+        /* Product Details Panel */
+        .product-details {
+            position: absolute;
+            right: 40px;
+            top: 50%;
+            transform: translateY(-50%);
+            text-align: right;
+            max-width: 280px;
+        }
+
+        .product-name {
+            font-size: 2rem;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 8px;
+            line-height: 1.2;
+        }
+
+        .product-brand {
+            font-size: 1.1rem;
+            color: #60a5fa;
+            margin-bottom: 16px;
+        }
+
+        .product-meta {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            margin-bottom: 24px;
+        }
+
+        .product-quantity {
+            padding: 6px 14px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 20px;
+            font-size: 0.85rem;
+            color: #d1d5db;
+        }
+
+        .product-nutriscore {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: white;
+        }
+
+        .add-to-cart-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 28px;
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+            border: none;
+            border-radius: 14px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px -10px rgba(59, 130, 246, 0.5);
+        }
+
+        .add-to-cart-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 40px -10px rgba(59, 130, 246, 0.6);
+        }
+
+        .add-to-cart-btn.added {
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+        }
+
+        /* Navigation Indicator */
+        .nav-indicator {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: baseline;
+            gap: 4px;
+            color: white;
+        }
+
+        .nav-current {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .nav-separator {
+            font-size: 1.2rem;
+            color: #6b7280;
+            margin: 0 4px;
+        }
+
+        .nav-total {
+            font-size: 1.2rem;
+            color: #6b7280;
+        }
+
+        .scroll-hint {
+            position: absolute;
+            bottom: 30px;
+            right: 40px;
+            color: #4b5563;
+            font-size: 1.5rem;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .empty-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+        }
+
+        .empty-icon.loading {
+            animation: pulse 1.5s infinite;
+        }
 
         @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(0.95); }
         }
 
-        #log-panel {
-            max-height: 200px;
-            overflow-y: auto;
+        .empty-state h3 {
+            font-size: 1.5rem;
+            color: white;
+            margin-bottom: 10px;
         }
 
-        .log-entry {
-            font-family: monospace;
-            font-size: 0.75rem;
-        }
-
-        /* Ocultar video de gestos pero mantenerlo activo */
-        #gesture-video {
-            position: absolute;
-            top: -9999px;
-            left: -9999px;
-        }
-
-        /* Estilos de filtros */
-        .filter-btn {
-            background-color: #4b5563;
+        .empty-state p {
             color: #9ca3af;
-            border: 2px solid transparent;
-        }
-        .filter-btn:hover {
-            background-color: #6b7280;
-            color: #fff;
-        }
-        .filter-btn-active {
-            background-color: #3b82f6;
-            color: #fff;
-            border-color: #60a5fa;
+            margin-bottom: 20px;
         }
 
-        /* Colores nutriscore para filtros */
-        .filter-btn.nutri-a { border-color: #22c55e; }
-        .filter-btn.nutri-b { border-color: #84cc16; }
-        .filter-btn.nutri-c { border-color: #eab308; }
-        .filter-btn.nutri-d { border-color: #f97316; }
-        .filter-btn.nutri-e { border-color: #ef4444; }
+        .clear-btn {
+            padding: 12px 24px;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.3s;
+        }
 
-        .filter-btn.nutri-a.filter-btn-active { background-color: #22c55e; border-color: #22c55e; }
-        .filter-btn.nutri-b.filter-btn-active { background-color: #84cc16; border-color: #84cc16; }
-        .filter-btn.nutri-c.filter-btn-active { background-color: #eab308; border-color: #eab308; color: #000; }
-        .filter-btn.nutri-d.filter-btn-active { background-color: #f97316; border-color: #f97316; }
-        .filter-btn.nutri-e.filter-btn-active { background-color: #ef4444; border-color: #ef4444; }
+        .clear-btn:hover {
+            background: #2563eb;
+        }
 
-        /* Cursor de gestos */
-        #gesture-cursor {
+        /* ========== HEADER ========== */
+        .site-header {
             position: fixed;
-            width: 24px;
-            height: 24px;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(to bottom, rgba(15,15,26,0.95), transparent);
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: white;
+        }
+
+        .logo span {
+            color: #22c55e;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .cart-btn {
+            position: relative;
+            padding: 10px 20px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 12px;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s;
+        }
+
+        .cart-btn:hover {
+            background: rgba(255,255,255,0.15);
+        }
+
+        .cart-count {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            width: 22px;
+            height: 22px;
+            background: #ef4444;
             border-radius: 50%;
-            background: rgba(59, 130, 246, 0.6);
-            border: 3px solid #3b82f6;
-            pointer-events: none;
-            z-index: 9999;
-            transform: translate(-50%, -50%);
-            transition: transform 0.05s ease-out, background 0.15s ease;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .voice-btn {
+            padding: 10px 20px;
+            background: rgba(59, 130, 246, 0.2);
+            border: 1px solid rgba(59, 130, 246, 0.4);
+            border-radius: 12px;
+            color: #60a5fa;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s;
+        }
+
+        .voice-btn:hover {
+            background: rgba(59, 130, 246, 0.3);
+        }
+
+        .voice-btn.active {
+            background: rgba(34, 197, 94, 0.2);
+            border-color: rgba(34, 197, 94, 0.4);
+            color: #22c55e;
+        }
+
+        /* ========== FILTERS ========== */
+        .filters-bar {
+            position: fixed;
+            left: 40px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            z-index: 50;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .filter-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #6b7280;
+            padding-left: 4px;
+        }
+
+        .filter-chip {
+            padding: 8px 16px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px;
+            color: #9ca3af;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .filter-chip:hover {
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
+
+        .filter-chip.active {
+            background: #3b82f6;
+            border-color: #3b82f6;
+            color: white;
+        }
+
+        /* Nutriscore colors */
+        .filter-chip.nutri-A.active { background: #22c55e; border-color: #22c55e; }
+        .filter-chip.nutri-B.active { background: #84cc16; border-color: #84cc16; }
+        .filter-chip.nutri-C.active { background: #eab308; border-color: #eab308; color: #000; }
+        .filter-chip.nutri-D.active { background: #f97316; border-color: #f97316; }
+        .filter-chip.nutri-E.active { background: #ef4444; border-color: #ef4444; }
+
+        /* ========== VIEWS ========== */
+        .view { display: none; }
+        .view.active { display: block; }
+
+        /* Details View */
+        #view-details {
+            padding: 100px 40px 40px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #60a5fa;
+            margin-bottom: 30px;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .back-link:hover {
+            color: #93c5fd;
+        }
+
+        /* Cart View */
+        #view-cart {
+            padding: 100px 40px 40px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .cart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .cart-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: white;
+        }
+
+        .cart-item {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 16px;
+            margin-bottom: 12px;
+        }
+
+        .cart-item-image {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            object-fit: cover;
+        }
+
+        .cart-item-info {
+            flex: 1;
+        }
+
+        .cart-item-name {
+            font-weight: 500;
+            color: white;
+        }
+
+        .cart-item-brand {
+            font-size: 0.85rem;
+            color: #9ca3af;
+        }
+
+        .cart-item-qty {
+            padding: 6px 12px;
+            background: #3b82f6;
+            border-radius: 8px;
+            font-weight: 600;
+            color: white;
+        }
+
+        /* Hide video */
+        #gesture-video {
             display: none;
         }
-        #gesture-cursor.active {
-            display: block;
-        }
-        #gesture-cursor.pinch {
-            background: rgba(34, 197, 94, 0.8);
-            border-color: #22c55e;
-            transform: translate(-50%, -50%) scale(1.5);
-        }
-        #gesture-cursor.palm {
-            background: rgba(239, 68, 68, 0.8);
-            border-color: #ef4444;
-            transform: translate(-50%, -50%) scale(1.8);
-            border-radius: 30%;
+
+        /* Hide gesture cursor initially */
+        #gesture-cursor {
+            display: none;
         }
 
-        /* Hover highlight para elementos interactivos con gesto */
-        .gesture-hover {
-            outline: 3px solid #3b82f6 !important;
-            outline-offset: 2px;
+        /* ========== PRODUCT GRID STYLES ========== */
+        .product-grid-container {
+            padding: 100px 40px 40px 180px;
+            min-height: 100vh;
+        }
+
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 24px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .grid-card {
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .grid-card:hover {
+            transform: translateY(-8px);
+        }
+
+        .grid-card-inner {
+            background: linear-gradient(145deg, #2a2a4a, #1e1e3a);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .grid-card:hover .grid-card-inner {
+            box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.6);
+            border-color: rgba(59, 130, 246, 0.3);
+        }
+
+        .grid-card-image {
+            position: relative;
+            aspect-ratio: 1;
+            overflow: hidden;
+        }
+
+        .grid-card-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+
+        .grid-card:hover .grid-card-image img {
+            transform: scale(1.1);
+        }
+
+        .grid-card-nutriscore {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+            color: white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        .grid-card-info {
+            padding: 16px;
+        }
+
+        .grid-card-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: white;
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .grid-card-brand {
+            font-size: 0.85rem;
+            color: #60a5fa;
+            margin-bottom: 2px;
+        }
+
+        .grid-card-quantity {
+            font-size: 0.75rem;
+            color: #9ca3af;
+        }
+
+        .grid-card-add {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+            border: none;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .grid-card-add:hover {
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        }
+
+        .grid-card-add.added {
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+        }
+
+        /* Pagination */
+        .pagination {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 40px;
+            padding-bottom: 40px;
+        }
+
+        .pagination-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .pagination-btn:hover:not(:disabled) {
+            background: rgba(59, 130, 246, 0.3);
+            border-color: rgba(59, 130, 246, 0.5);
+        }
+
+        .pagination-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .pagination-dots {
+            display: flex;
+            gap: 8px;
+        }
+
+        .pagination-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .pagination-dot:hover {
+            background: rgba(255, 255, 255, 0.4);
+        }
+
+        .pagination-dot.active {
+            background: #3b82f6;
+            transform: scale(1.2);
+        }
+
+        /* ========== HORIZONTAL COVERFLOW STYLES ========== */
+        .hcoverflow-stage {
+            position: relative;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            perspective: 1200px;
+            padding: 0 40px;
+        }
+
+        .hcoverflow-track {
+            position: relative;
+            width: 100%;
+            max-width: 1000px;
+            height: 450px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transform-style: preserve-3d;
+        }
+
+        .hcoverflow-card {
+            position: absolute;
+            width: 320px;
+            transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            cursor: pointer;
+            transform-style: preserve-3d;
+        }
+
+        .hcoverflow-card-inner {
+            position: relative;
+            background: linear-gradient(145deg, #2a2a4a, #1e1e3a);
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5),
+                        0 0 0 1px rgba(255, 255, 255, 0.1);
+        }
+
+        .hcoverflow-active .hcoverflow-card-inner {
+            box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.6),
+                        0 0 0 2px rgba(59, 130, 246, 0.3);
+        }
+
+        .hcoverflow-card-image {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 1;
+            overflow: hidden;
+        }
+
+        .hcoverflow-card-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+
+        .hcoverflow-active .hcoverflow-card-image img:hover {
+            transform: scale(1.05);
+        }
+
+        .hcoverflow-card-reflection {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 50%;
+            background: linear-gradient(to bottom, transparent, rgba(0,0,0,0.6));
+            pointer-events: none;
+        }
+
+        .hcoverflow-nutriscore {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 18px;
+            color: white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        .hcoverflow-card-info {
+            padding: 20px;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s ease;
+        }
+
+        .hcoverflow-card-info.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .hcoverflow-card-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: white;
+            margin-bottom: 4px;
+        }
+
+        .hcoverflow-card-brand {
+            font-size: 1rem;
+            color: #60a5fa;
+            margin-bottom: 4px;
+        }
+
+        .hcoverflow-card-quantity {
+            font-size: 0.85rem;
+            color: #9ca3af;
+            margin-bottom: 16px;
+        }
+
+        .hcoverflow-add-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 20px -8px rgba(59, 130, 246, 0.5);
+        }
+
+        .hcoverflow-add-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 25px -8px rgba(59, 130, 246, 0.6);
+        }
+
+        .hcoverflow-add-btn.added {
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+        }
+
+        .hcoverflow-nav {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            margin-top: 30px;
+        }
+
+        .hcoverflow-nav-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .hcoverflow-nav-btn:hover:not(:disabled) {
+            background: rgba(59, 130, 246, 0.3);
+            border-color: rgba(59, 130, 246, 0.5);
+            transform: scale(1.1);
+        }
+
+        .hcoverflow-nav-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .hcoverflow-indicator {
+            display: flex;
+            align-items: baseline;
+            gap: 4px;
+            color: white;
+        }
+
+        .hcoverflow-current {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .hcoverflow-separator,
+        .hcoverflow-total {
+            font-size: 1rem;
+            color: #6b7280;
+        }
+
+        .hcoverflow-back-btn {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            color: #9ca3af;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .hcoverflow-back-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .product-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (max-width: 900px) {
+            .product-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .product-grid-container {
+                padding-left: 40px;
+            }
+
+            .hcoverflow-card {
+                width: 260px;
+            }
+
+            .hcoverflow-track {
+                height: 380px;
+            }
+        }
+
+        @media (max-width: 1024px) {
+            .product-details {
+                position: static;
+                transform: none;
+                text-align: center;
+                margin-top: 20px;
+            }
+
+            .product-meta {
+                justify-content: center;
+            }
+
+            .filters-bar {
+                position: fixed;
+                left: 10px;
+                top: auto;
+                bottom: 20px;
+                transform: none;
+                flex-direction: row;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .product-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .hcoverflow-card {
+                width: 220px;
+            }
         }
     </style>
 </head>
-<body class="bg-gray-900 text-white min-h-screen">
-    <div id="app" class="container mx-auto px-4 py-6">
-        <!-- Header -->
-        <header class="mb-6">
-            <h1 class="text-3xl font-bold text-center text-blue-400">Demo Multimodal</h1>
-            <p class="text-center text-gray-400 mt-2">Interaccion por Voz + Gestos</p>
-        </header>
-
-        <!-- Panel de Estado -->
-        <section id="status-panel" class="bg-gray-800 rounded-lg p-4 mb-6">
-            <h2 class="text-lg font-semibold mb-3 text-blue-300">Estado del Sistema</h2>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div class="flex items-center gap-2">
-                    <span id="status-camera" class="status-indicator status-off"></span>
-                    <span class="text-sm">Camara</span>
-                </div>
-                <div class="flex items-center gap-2">
-                    <span id="status-mic" class="status-indicator status-off"></span>
-                    <span class="text-sm">Microfono</span>
-                </div>
-                <div class="flex items-center gap-2">
-                    <span id="status-model" class="status-indicator status-off"></span>
-                    <span class="text-sm">Modelo ML</span>
-                </div>
-                <div class="flex items-center gap-2">
-                    <span id="status-voice" class="status-indicator status-off"></span>
-                    <span class="text-sm">Voz Activa</span>
-                </div>
-            </div>
-            <!-- Boton Iniciar Demo -->
-            <div class="mt-4 text-center">
-                <button id="btn-start-demo"
-                    class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg transition-colors">
-                    Iniciar Demo
-                </button>
-            </div>
-        </section>
-
-        <!-- Contenido Principal - SPA Views -->
-        <main id="main-content" class="bg-gray-800 rounded-lg p-4 mb-6 min-h-[400px]">
-            <!-- BROWSE View (default) -->
-            <div id="view-browse" class="view">
-                <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-4">
-                    <div>
-                        <h2 class="text-xl font-semibold text-green-400">Catalogo de Productos</h2>
-                        <p class="text-gray-400 text-sm">Di "ver producto [nombre]" o haz gesto de seleccionar</p>
-                    </div>
-                    <div id="products-count" class="text-gray-400 text-sm"></div>
-                </div>
-
-                <!-- Filtros -->
-                <div id="filters-panel" class="bg-gray-700 rounded-lg p-4 mb-4">
-                    <div class="flex flex-col md:flex-row gap-4">
-                        <!-- Filtro Categoria -->
-                        <div class="flex-1">
-                            <label class="block text-sm text-gray-400 mb-2">Categoria</label>
-                            <div id="filter-category" class="flex flex-wrap gap-2">
-                                <button data-category="" class="filter-btn filter-btn-active px-3 py-1 rounded text-sm transition-colors">
-                                    Todas
-                                </button>
-                                <button data-category="snacks" class="filter-btn px-3 py-1 rounded text-sm transition-colors">
-                                    🍿 Snacks
-                                </button>
-                                <button data-category="drinks" class="filter-btn px-3 py-1 rounded text-sm transition-colors">
-                                    🥤 Drinks
-                                </button>
-                                <button data-category="dairy" class="filter-btn px-3 py-1 rounded text-sm transition-colors">
-                                    🥛 Dairy
-                                </button>
-                                <button data-category="cereals" class="filter-btn px-3 py-1 rounded text-sm transition-colors">
-                                    🥣 Cereals
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Filtro Nutriscore -->
-                        <div class="flex-1">
-                            <label class="block text-sm text-gray-400 mb-2">Nutriscore</label>
-                            <div id="filter-nutriscore" class="flex flex-wrap gap-2">
-                                <button data-nutriscore="" class="filter-btn filter-btn-active px-3 py-1 rounded text-sm transition-colors">
-                                    Todos
-                                </button>
-                                <button data-nutriscore="A" class="filter-btn nutri-a px-3 py-1 rounded text-sm font-bold transition-colors">
-                                    A
-                                </button>
-                                <button data-nutriscore="B" class="filter-btn nutri-b px-3 py-1 rounded text-sm font-bold transition-colors">
-                                    B
-                                </button>
-                                <button data-nutriscore="C" class="filter-btn nutri-c px-3 py-1 rounded text-sm font-bold transition-colors">
-                                    C
-                                </button>
-                                <button data-nutriscore="D" class="filter-btn nutri-d px-3 py-1 rounded text-sm font-bold transition-colors">
-                                    D
-                                </button>
-                                <button data-nutriscore="E" class="filter-btn nutri-e px-3 py-1 rounded text-sm font-bold transition-colors">
-                                    E
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Boton limpiar filtros -->
-                    <div class="mt-3 text-right">
-                        <button id="btn-clear-filters" class="text-sm text-gray-400 hover:text-white transition-colors">
-                            Limpiar filtros
-                        </button>
-                    </div>
-                </div>
-
-                <div id="products-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <!-- Products rendered dynamically -->
-                    <div class="text-center text-gray-500 py-8">
-                        Inicia la demo para cargar productos
-                    </div>
-                </div>
-            </div>
-
-            <!-- DETAILS View (hidden by default) -->
-            <div id="view-details" class="view hidden">
-                <button id="btn-back" class="text-blue-400 hover:text-blue-300 mb-4">&larr; Volver</button>
-                <div id="product-details">
-                    <!-- Product details rendered dynamically -->
-                </div>
-            </div>
-
-            <!-- CART View (hidden by default) -->
-            <div id="view-cart" class="view hidden">
-                <h2 class="text-xl font-semibold mb-4 text-yellow-400">Carrito de Compras</h2>
-                <div id="cart-items">
-                    <!-- Cart items rendered dynamically -->
-                    <p class="text-gray-500">El carrito esta vacio</p>
-                </div>
-                <div id="cart-total" class="mt-4 pt-4 border-t border-gray-700">
-                    <span class="text-lg font-bold">Total: <span id="total-amount">$0.00</span></span>
-                </div>
-            </div>
-        </main>
-
-        <!-- Panel de Log -->
-        <section id="log-section" class="bg-gray-800 rounded-lg p-4">
-            <h2 class="text-lg font-semibold mb-3 text-purple-300">Log de Eventos Multimodales</h2>
-            <div id="log-panel" class="bg-gray-900 rounded p-3 text-gray-300">
-                <div class="log-entry text-gray-500">[Sistema] Esperando inicio de demo...</div>
-            </div>
-            <button id="btn-clear-log" class="mt-2 text-sm text-gray-400 hover:text-white">
-                Limpiar log
+<body>
+    <!-- Header -->
+    <header class="site-header">
+        <div class="logo">Compra<span>Inteligente</span></div>
+        <div class="header-actions">
+            <button class="voice-btn" id="btn-start-demo">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                    <line x1="12" y1="19" x2="12" y2="23"></line>
+                </svg>
+                <span>Voz</span>
             </button>
-        </section>
+            <button class="cart-btn" id="btn-cart">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M6 6h15l-1.5 9h-12z"></path>
+                    <circle cx="9" cy="20" r="1"></circle>
+                    <circle cx="18" cy="20" r="1"></circle>
+                </svg>
+                <span id="cart-count" class="cart-count">0</span>
+            </button>
+        </div>
+    </header>
 
-        <!-- Video oculto para captura de gestos -->
-        <video id="gesture-video" autoplay playsinline></video>
-    </div>
+    <!-- Filters Sidebar -->
+    <aside class="filters-bar" id="filters-bar">
+        <div class="filter-group">
+            <span class="filter-label">Categoria</span>
+            <button class="filter-chip active" data-category="">Todas</button>
+            <button class="filter-chip" data-category="dairy">Lacteos</button>
+            <button class="filter-chip" data-category="drinks">Bebidas</button>
+            <button class="filter-chip" data-category="snacks">Snacks</button>
+            <button class="filter-chip" data-category="cereals">Cereales</button>
+        </div>
+        <div class="filter-group" style="margin-top: 20px;">
+            <span class="filter-label">Nutriscore</span>
+            <button class="filter-chip nutri-A" data-nutriscore="A">A</button>
+            <button class="filter-chip nutri-B" data-nutriscore="B">B</button>
+            <button class="filter-chip nutri-C" data-nutriscore="C">C</button>
+            <button class="filter-chip nutri-D" data-nutriscore="D">D</button>
+            <button class="filter-chip nutri-E" data-nutriscore="E">E</button>
+        </div>
+    </aside>
 
-    <!-- Cursor de gestos (overlay) -->
+    <!-- Main Content -->
+    <main id="app">
+        <!-- Browse View (Coverflow) -->
+        <div id="view-browse" class="view active">
+            <div id="products-grid"></div>
+        </div>
+
+        <!-- Details View -->
+        <div id="view-details" class="view">
+            <div class="back-link" id="btn-back">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 12H5M12 19l-7-7 7-7"/>
+                </svg>
+                Volver
+            </div>
+            <div id="product-details"></div>
+        </div>
+
+        <!-- Cart View -->
+        <div id="view-cart" class="view">
+            <div class="cart-header">
+                <h2 class="cart-title">Tu Carrito</h2>
+                <div class="back-link" id="btn-back-cart">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M19 12H5M12 19l-7-7 7-7"/>
+                    </svg>
+                    Seguir comprando
+                </div>
+            </div>
+            <div id="cart-items"></div>
+            <div id="cart-total" style="margin-top: 24px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.1);">
+                <span style="font-size: 1.25rem; font-weight: 600; color: white;">Total: <span id="total-amount">0 items</span></span>
+            </div>
+        </div>
+    </main>
+
+    <!-- Hidden elements -->
+    <video id="gesture-video" autoplay playsinline></video>
     <div id="gesture-cursor"></div>
 
-    <!-- Cargar modulos ES6 -->
     <script type="module" src="src/app.js"></script>
 </body>
 </html>

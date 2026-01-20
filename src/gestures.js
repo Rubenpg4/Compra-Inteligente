@@ -417,6 +417,11 @@ export async function init(videoEl, overlayEl, cbs = {}) {
         // Cargar modelo MediaPipe
         addLog('system', 'Gestos: cargando modelo HandLandmarker...');
 
+        // Verificar que MediaPipe esté disponible
+        if (!window.FilesetResolver || !window.FilesetResolver.forVisionTasks) {
+            throw new Error('MediaPipe Tasks Vision no disponible. Verifica la conexion a Internet.');
+        }
+
         const vision = await window.FilesetResolver.forVisionTasks(
             'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.8/wasm'
         );

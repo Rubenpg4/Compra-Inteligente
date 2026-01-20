@@ -1,7 +1,6 @@
 /**
  * ui.js - Modulo de Interfaz de Usuario
  * Maneja el renderizado de la UI y la actualizacion del DOM
- * Se suscribe al store para actualizaciones reactivas
  */
 
 import {
@@ -10,7 +9,6 @@ import {
     setMode,
     addToCart,
     MODES,
-    clearLogs,
     getCartTotal,
     setFilterCategory,
     setFilterNutriscore,
@@ -18,381 +16,263 @@ import {
     getFilteredProducts
 } from './store.js';
 
-// Referencias a elementos del DOM
-const elements = {
-    // Panel de estado
-    statusCamera: null,
-    statusMic: null,
-    statusModel: null,
-    statusVoice: null,
+import { renderGrid, updateGrid } from './components/productGrid.js';
+import { renderHorizontalCoverflow, updateHorizontalCoverflow } from './components/horizontalCoverflow.js';
 
-    // Vistas principales
-    viewBrowse: null,
-    viewDetails: null,
-    viewCart: null,
-    productsGrid: null,
-    productDetails: null,
-    cartItems: null,
-    totalAmount: null,
+let gridInstance = null;
+let coverflowInstance = null;
+let currentViewMode = 'grid'; // 'grid' o 'coverflow'
 
-    // Filtros
-    filterCategory: null,
-    filterNutriscore: null,
-    btnClearFilters: null,
-    productsCount: null,
+// Referencias DOM
+const els = {};
 
-    // Log
-    logPanel: null,
-    btnClearLog: null,
-
-    // Botones
-    btnStartDemo: null,
-    btnBack: null
-};
-
-/**
- * Inicializa las referencias al DOM
- */
 function initElements() {
-    elements.statusCamera = document.getElementById('status-camera');
-    elements.statusMic = document.getElementById('status-mic');
-    elements.statusModel = document.getElementById('status-model');
-    elements.statusVoice = document.getElementById('status-voice');
-
-    elements.viewBrowse = document.getElementById('view-browse');
-    elements.viewDetails = document.getElementById('view-details');
-    elements.viewCart = document.getElementById('view-cart');
-    elements.productsGrid = document.getElementById('products-grid');
-    elements.productDetails = document.getElementById('product-details');
-    elements.cartItems = document.getElementById('cart-items');
-    elements.totalAmount = document.getElementById('total-amount');
-
-    // Filtros
-    elements.filterCategory = document.getElementById('filter-category');
-    elements.filterNutriscore = document.getElementById('filter-nutriscore');
-    elements.btnClearFilters = document.getElementById('btn-clear-filters');
-    elements.productsCount = document.getElementById('products-count');
-
-    elements.logPanel = document.getElementById('log-panel');
-    elements.btnClearLog = document.getElementById('btn-clear-log');
-    elements.btnStartDemo = document.getElementById('btn-start-demo');
-    elements.btnBack = document.getElementById('btn-back');
+    els.productsGrid = document.getElementById('products-grid');
+    els.productDetails = document.getElementById('product-details');
+    els.cartItems = document.getElementById('cart-items');
+    els.totalAmount = document.getElementById('total-amount');
+    els.cartCount = document.getElementById('cart-count');
+    els.btnStartDemo = document.getElementById('btn-start-demo');
+    els.btnBack = document.getElementById('btn-back');
+    els.btnBackCart = document.getElementById('btn-back-cart');
+    els.btnCart = document.getElementById('btn-cart');
+    els.filtersBar = document.getElementById('filters-bar');
+    els.viewBrowse = document.getElementById('view-browse');
+    els.viewDetails = document.getElementById('view-details');
+    els.viewCart = document.getElementById('view-cart');
 }
 
-/**
- * Actualiza los indicadores de estado de los servicios
- * @param {Object} services - Estado de los servicios
- */
-function updateStatusIndicators(services) {
-    const setStatus = (element, active) => {
-        if (!element) return;
-        element.classList.remove('status-off', 'status-on', 'status-loading');
-        element.classList.add(active ? 'status-on' : 'status-off');
-    };
-
-    setStatus(elements.statusCamera, services.camera);
-    setStatus(elements.statusMic, services.microphone);
-    setStatus(elements.statusModel, services.model);
-    setStatus(elements.statusVoice, services.voiceActive);
-}
-
-// Iconos por categoria
-const categoryIcons = {
-    snacks: '🍿',
-    drinks: '🥤',
-    dairy: '🥛',
-    cereals: '🥣'
+// Imagenes por categoria
+const categoryImages = {
+    snacks: 'https://images.unsplash.com/photo-1621939514649-280e2ee25f60?w=400&h=400&fit=crop',
+    drinks: 'https://images.unsplash.com/photo-1625772299848-391b6a87d7b3?w=400&h=400&fit=crop',
+    dairy: 'https://images.unsplash.com/photo-1628088062854-d1870b4553da?w=400&h=400&fit=crop',
+    cereals: 'https://images.unsplash.com/photo-1517456215183-9a2c3a748f8c?w=400&h=400&fit=crop'
 };
 
-// Colores por nutriscore
 const nutriscoreColors = {
-    A: 'bg-green-500',
-    B: 'bg-lime-500',
-    C: 'bg-yellow-500',
-    D: 'bg-orange-500',
-    E: 'bg-red-500'
+    A: '#22c55e', B: '#84cc16', C: '#eab308', D: '#f97316', E: '#ef4444'
 };
 
-/**
- * Renderiza la lista de productos en modo BROWSE
- * @param {Array} products - Lista de productos
- */
-function renderProducts(products) {
-    if (!elements.productsGrid) return;
+function getProductImage(product) {
+    return categoryImages[product.category] || categoryImages.snacks;
+}
 
-    if (products.length === 0) {
-        elements.productsGrid.innerHTML = `
-            <div class="col-span-full text-center text-gray-500 py-8">
-                No hay productos disponibles
-            </div>
-        `;
-        return;
+/**
+ * Determina si hay filtros activos
+ */
+function hasActiveFilters() {
+    const state = getState();
+    return !!(state.filters?.category || state.filters?.nutriscore);
+}
+
+/**
+ * Renderiza productos en grid o coverflow según filtros
+ */
+function renderProducts(products, forceMode = null) {
+    if (!els.productsGrid) return;
+
+    const useFilters = forceMode ? forceMode === 'coverflow' : hasActiveFilters();
+    const newMode = useFilters ? 'coverflow' : 'grid';
+
+    // Si cambiamos de modo, limpiar el contenedor
+    if (newMode !== currentViewMode) {
+        els.productsGrid.innerHTML = '';
+        gridInstance = null;
+        coverflowInstance = null;
+        currentViewMode = newMode;
     }
 
-    elements.productsGrid.innerHTML = products.map(product => {
-        const icon = categoryIcons[product.category] || '📦';
-        const nutriColor = nutriscoreColors[product.nutriscore] || 'bg-gray-500';
-
-        return `
-            <div class="product-card bg-gray-700 rounded-lg p-4 cursor-pointer hover:bg-gray-600 transition-colors"
-                 data-product-id="${product.id}">
-                <div class="aspect-square bg-gray-600 rounded mb-3 flex items-center justify-center relative">
-                    <span class="text-5xl">${icon}</span>
-                    <span class="absolute top-2 right-2 ${nutriColor} text-white text-xs font-bold px-2 py-1 rounded">
-                        ${product.nutriscore}
-                    </span>
-                </div>
-                <h3 class="font-semibold text-white truncate">${product.name}</h3>
-                <p class="text-gray-400 text-sm">${product.brand}</p>
-                <div class="mt-2 flex justify-between items-center">
-                    <span class="text-blue-300 text-sm">${product.quantity}</span>
-                    <button class="btn-add-cart bg-blue-600 hover:bg-blue-700 text-white text-sm px-3 py-1 rounded"
-                            data-product-id="${product.id}">
-                        Agregar
-                    </button>
-                </div>
-            </div>
-        `;
-    }).join('');
-
-    // Event listeners para tarjetas de producto
-    elements.productsGrid.querySelectorAll('.product-card').forEach(card => {
-        card.addEventListener('click', (e) => {
-            // Si hizo clic en el boton de agregar, no cambiar de vista
-            if (e.target.classList.contains('btn-add-cart')) return;
-
-            const productId = card.dataset.productId;
-            const state = getState();
-            const product = state.products.find(p => p.id == productId);
-            if (product) {
-                setMode(MODES.DETAILS, { product });
-            }
-        });
-    });
-
-    // Event listeners para botones de agregar al carrito
-    elements.productsGrid.querySelectorAll('.btn-add-cart').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const productId = btn.dataset.productId;
-            const state = getState();
-            const product = state.products.find(p => p.id == productId);
-            if (product) {
-                addToCart(product);
-            }
-        });
-    });
+    if (newMode === 'grid') {
+        // Modo Grid (sin filtros)
+        if (!gridInstance) {
+            gridInstance = renderGrid(els.productsGrid, products);
+        } else {
+            updateGrid(products);
+        }
+    } else {
+        // Modo Coverflow horizontal (con filtros)
+        if (!coverflowInstance) {
+            coverflowInstance = renderHorizontalCoverflow(els.productsGrid, products);
+        } else {
+            updateHorizontalCoverflow(products);
+        }
+    }
 }
 
 /**
- * Renderiza los detalles de un producto en modo DETAILS
- * @param {Object} product - Producto a mostrar
+ * Renderiza detalles del producto
  */
 function renderProductDetails(product) {
-    if (!elements.productDetails || !product) return;
+    if (!els.productDetails || !product) return;
 
-    const icon = categoryIcons[product.category] || '📦';
-    const nutriColor = nutriscoreColors[product.nutriscore] || 'bg-gray-500';
-    const keywords = product.keywords ? product.keywords.join(', ') : '';
+    const image = getProductImage(product);
+    const nutriColor = nutriscoreColors[product.nutriscore] || '#6b7280';
 
-    elements.productDetails.innerHTML = `
-        <div class="flex flex-col md:flex-row gap-6">
-            <div class="md:w-1/3">
-                <div class="aspect-square bg-gray-700 rounded-lg flex items-center justify-center relative">
-                    <span class="text-8xl">${icon}</span>
-                    <span class="absolute top-4 right-4 ${nutriColor} text-white text-lg font-bold px-3 py-1 rounded">
-                        ${product.nutriscore}
+    els.productDetails.innerHTML = `
+        <div style="display: flex; gap: 40px; align-items: flex-start;">
+            <div style="flex: 0 0 400px;">
+                <img src="${image}" alt="${product.name}"
+                     style="width: 100%; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);">
+            </div>
+            <div style="flex: 1;">
+                <h1 style="font-size: 2.5rem; font-weight: 700; color: white; margin-bottom: 8px;">${product.name}</h1>
+                <p style="font-size: 1.25rem; color: #60a5fa; margin-bottom: 24px;">${product.brand}</p>
+
+                <div style="display: flex; gap: 16px; margin-bottom: 32px;">
+                    <span style="padding: 8px 20px; background: rgba(255,255,255,0.1); border-radius: 24px; color: #d1d5db;">
+                        ${product.quantity}
+                    </span>
+                    <span style="padding: 8px 20px; background: ${nutriColor}; border-radius: 24px; color: white; font-weight: 600;">
+                        Nutriscore ${product.nutriscore}
                     </span>
                 </div>
-            </div>
-            <div class="md:w-2/3">
-                <h2 class="text-2xl font-bold text-white mb-1">${product.name}</h2>
-                <p class="text-blue-400 text-lg mb-4">${product.brand}</p>
-                <div class="space-y-3 text-sm text-gray-300 mb-6">
-                    <p><strong class="text-gray-400">Categoria:</strong> <span class="capitalize">${product.category}</span></p>
-                    <p><strong class="text-gray-400">Cantidad:</strong> ${product.quantity}</p>
-                    <p><strong class="text-gray-400">Nutriscore:</strong>
-                        <span class="${nutriColor} text-white px-2 py-0.5 rounded text-xs font-bold">${product.nutriscore}</span>
-                    </p>
-                    ${keywords ? `<p><strong class="text-gray-400">Tags:</strong> ${keywords}</p>` : ''}
-                </div>
-                <button class="btn-add-cart-detail bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg"
-                        data-product-id="${product.id}">
-                    Agregar al Carrito
+
+                ${product.keywords ? `
+                    <div style="margin-bottom: 32px;">
+                        <p style="color: #6b7280; margin-bottom: 8px; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px;">Tags</p>
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                            ${product.keywords.map(k => `<span style="padding: 6px 12px; background: rgba(59,130,246,0.2); border-radius: 16px; color: #60a5fa; font-size: 0.85rem;">${k}</span>`).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+
+                <button id="detail-add-cart" style="
+                    display: inline-flex; align-items: center; gap: 12px;
+                    padding: 16px 32px; background: linear-gradient(135deg, #3b82f6, #2563eb);
+                    color: white; border: none; border-radius: 16px;
+                    font-size: 1.1rem; font-weight: 600; cursor: pointer;
+                    transition: all 0.3s; box-shadow: 0 10px 30px -10px rgba(59,130,246,0.5);
+                ">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M6 6h15l-1.5 9h-12z"></path>
+                        <circle cx="9" cy="20" r="1"></circle>
+                        <circle cx="18" cy="20" r="1"></circle>
+                    </svg>
+                    Añadir al carrito
                 </button>
             </div>
         </div>
     `;
 
-    // Event listener para agregar al carrito desde detalles
-    const btnAdd = elements.productDetails.querySelector('.btn-add-cart-detail');
-    if (btnAdd) {
-        btnAdd.addEventListener('click', () => {
-            addToCart(product);
-        });
-    }
+    document.getElementById('detail-add-cart')?.addEventListener('click', () => {
+        addToCart(product);
+        const btn = document.getElementById('detail-add-cart');
+        if (btn) {
+            btn.innerHTML = '<span>Añadido ✓</span>';
+            btn.style.background = 'linear-gradient(135deg, #22c55e, #16a34a)';
+        }
+    });
 }
 
 /**
- * Renderiza los items del carrito en modo CART
- * @param {Array} cart - Items del carrito
+ * Renderiza carrito
  */
 function renderCart(cart) {
-    if (!elements.cartItems) return;
+    if (!els.cartItems) return;
 
     if (cart.length === 0) {
-        elements.cartItems.innerHTML = `
-            <p class="text-gray-500 text-center py-8">El carrito esta vacio</p>
+        els.cartItems.innerHTML = `
+            <div style="text-align: center; padding: 60px 20px; color: #6b7280;">
+                <div style="font-size: 4rem; margin-bottom: 20px;">🛒</div>
+                <p>Tu carrito está vacío</p>
+            </div>
         `;
-        if (elements.totalAmount) {
-            elements.totalAmount.textContent = '0 items';
-        }
+        if (els.totalAmount) els.totalAmount.textContent = '0 items';
         return;
     }
 
-    elements.cartItems.innerHTML = cart.map(item => {
-        const icon = categoryIcons[item.category] || '📦';
-        const nutriColor = nutriscoreColors[item.nutriscore] || 'bg-gray-500';
-
+    els.cartItems.innerHTML = cart.map(item => {
+        const image = getProductImage(item);
         return `
-            <div class="cart-item flex items-center justify-between bg-gray-700 rounded p-3 mb-2">
-                <div class="flex items-center gap-3">
-                    <span class="text-3xl">${icon}</span>
-                    <div>
-                        <h4 class="font-semibold text-white">${item.name}</h4>
-                        <p class="text-sm text-gray-400">${item.brand} - ${item.quantity}</p>
-                    </div>
+            <div class="cart-item">
+                <img src="${image}" alt="${item.name}" class="cart-item-image">
+                <div class="cart-item-info">
+                    <div class="cart-item-name">${item.name}</div>
+                    <div class="cart-item-brand">${item.brand} - ${item.quantity}</div>
                 </div>
-                <div class="text-right flex items-center gap-3">
-                    <span class="${nutriColor} text-white text-xs font-bold px-2 py-1 rounded">${item.nutriscore}</span>
-                    <span class="bg-blue-600 text-white text-sm px-2 py-1 rounded">x${item.cartQty}</span>
-                </div>
+                <span class="cart-item-qty">x${item.cartQty}</span>
             </div>
         `;
     }).join('');
 
-    // Actualizar total (cantidad de items)
-    if (elements.totalAmount) {
-        const totalItems = cart.reduce((sum, item) => sum + item.cartQty, 0);
-        elements.totalAmount.textContent = `${totalItems} item${totalItems !== 1 ? 's' : ''}`;
+    if (els.totalAmount) {
+        const total = cart.reduce((sum, item) => sum + item.cartQty, 0);
+        els.totalAmount.textContent = `${total} item${total !== 1 ? 's' : ''}`;
     }
 }
 
 /**
- * Renderiza el log de eventos
- * @param {Array} logs - Entradas del log
- */
-function renderLogs(logs) {
-    if (!elements.logPanel) return;
-
-    if (logs.length === 0) {
-        elements.logPanel.innerHTML = `
-            <div class="log-entry text-gray-500">[Sistema] Log vacio</div>
-        `;
-        return;
-    }
-
-    const typeColors = {
-        voice: 'text-blue-400',
-        gesture: 'text-purple-400',
-        system: 'text-gray-400',
-        cart: 'text-yellow-400',
-        error: 'text-red-400'
-    };
-
-    elements.logPanel.innerHTML = logs.map(log => {
-        const colorClass = typeColors[log.type] || 'text-gray-400';
-        return `
-            <div class="log-entry ${colorClass}">
-                [${log.timestamp}] [${log.type.toUpperCase()}] ${log.message}
-            </div>
-        `;
-    }).join('');
-
-    // Auto-scroll al final
-    elements.logPanel.scrollTop = elements.logPanel.scrollHeight;
-}
-
-/**
- * Cambia la vista visible segun el modo actual
- * @param {string} mode - Modo actual (BROWSE, DETAILS, CART)
+ * Cambia la vista activa
  */
 function switchView(mode) {
-    // Ocultar todas las vistas
-    [elements.viewBrowse, elements.viewDetails, elements.viewCart].forEach(view => {
-        if (view) view.classList.add('hidden');
+    [els.viewBrowse, els.viewDetails, els.viewCart].forEach(v => {
+        if (v) v.classList.remove('active');
     });
 
-    // Mostrar vista correspondiente
+    // Mostrar/ocultar filtros
+    if (els.filtersBar) {
+        els.filtersBar.style.display = mode === MODES.BROWSE ? 'flex' : 'none';
+    }
+
     switch (mode) {
         case MODES.BROWSE:
-            if (elements.viewBrowse) elements.viewBrowse.classList.remove('hidden');
+            if (els.viewBrowse) els.viewBrowse.classList.add('active');
             break;
         case MODES.DETAILS:
-            if (elements.viewDetails) elements.viewDetails.classList.remove('hidden');
+            if (els.viewDetails) els.viewDetails.classList.add('active');
             break;
         case MODES.CART:
-            if (elements.viewCart) elements.viewCart.classList.remove('hidden');
+            if (els.viewCart) els.viewCart.classList.add('active');
             break;
     }
 }
 
 /**
- * Actualiza la UI de los filtros segun el estado actual
- * @param {Object} filters - Estado de los filtros
- * @param {number} filteredCount - Cantidad de productos filtrados
- * @param {number} totalCount - Total de productos
+ * Actualiza UI de filtros
  */
-function updateFiltersUI(filters, filteredCount, totalCount) {
-    // Actualizar botones de categoria
-    if (elements.filterCategory) {
-        elements.filterCategory.querySelectorAll('.filter-btn').forEach(btn => {
-            const category = btn.dataset.category;
-            btn.classList.toggle('filter-btn-active', category === (filters.category || ''));
-        });
-    }
+function updateFiltersUI(filters) {
+    if (!els.filtersBar) return;
 
-    // Actualizar botones de nutriscore
-    if (elements.filterNutriscore) {
-        elements.filterNutriscore.querySelectorAll('.filter-btn').forEach(btn => {
-            const nutriscore = btn.dataset.nutriscore;
-            btn.classList.toggle('filter-btn-active', nutriscore === (filters.nutriscore || ''));
-        });
-    }
+    // Categoria
+    els.filtersBar.querySelectorAll('[data-category]').forEach(btn => {
+        const cat = btn.dataset.category || null;
+        btn.classList.toggle('active', cat === (filters.category || ''));
+    });
 
-    // Actualizar contador de productos
-    if (elements.productsCount) {
-        if (filters.category || filters.nutriscore) {
-            elements.productsCount.textContent = `Mostrando ${filteredCount} de ${totalCount} productos`;
-        } else {
-            elements.productsCount.textContent = `${totalCount} productos`;
-        }
+    // Nutriscore
+    els.filtersBar.querySelectorAll('[data-nutriscore]').forEach(btn => {
+        const ns = btn.dataset.nutriscore || null;
+        btn.classList.toggle('active', ns === filters.nutriscore);
+    });
+}
+
+/**
+ * Actualiza contador del carrito
+ */
+function updateCartCount() {
+    const total = getCartTotal();
+    if (els.cartCount) {
+        els.cartCount.textContent = total;
+        els.cartCount.style.display = total > 0 ? 'flex' : 'none';
     }
 }
 
 /**
- * Callback principal de actualizacion de UI
- * Se ejecuta cada vez que cambia el estado
- * @param {Object} state - Estado actual
- * @param {Object} prevState - Estado anterior
+ * Callback de cambio de estado
  */
 function onStateChange(state, prevState) {
-    // Actualizar indicadores de estado
-    updateStatusIndicators(state.services);
-
-    // Cambiar vista si el modo cambio
+    // Cambio de vista
     if (state.currentMode !== prevState?.currentMode) {
         switchView(state.currentMode);
     }
 
-    // Obtener productos filtrados
     const filteredProducts = getFilteredProducts();
 
-    // Renderizar segun el modo actual
     switch (state.currentMode) {
         case MODES.BROWSE:
             renderProducts(filteredProducts);
-            updateFiltersUI(state.filters, filteredProducts.length, state.products.length);
+            updateFiltersUI(state.filters);
             break;
         case MODES.DETAILS:
             renderProductDetails(state.selectedProduct);
@@ -402,138 +282,93 @@ function onStateChange(state, prevState) {
             break;
     }
 
-    // Actualizar log siempre
-    renderLogs(state.logs);
+    updateCartCount();
 
-    // Actualizar boton de demo
-    if (elements.btnStartDemo) {
-        if (state.demoStarted) {
-            elements.btnStartDemo.textContent = 'Demo Activa';
-            elements.btnStartDemo.disabled = true;
-            elements.btnStartDemo.classList.add('opacity-50', 'cursor-not-allowed');
-        }
+    // Boton voz
+    if (els.btnStartDemo && state.demoStarted) {
+        els.btnStartDemo.classList.add('active');
+        els.btnStartDemo.querySelector('span').textContent = 'Voz activa';
     }
 }
 
 /**
- * Configura los event listeners iniciales
- * @param {Function} onStartDemo - Callback cuando se inicia la demo
+ * Configura event listeners
  */
 function setupEventListeners(onStartDemo) {
-    // Boton de inicio de demo
-    if (elements.btnStartDemo && onStartDemo) {
-        elements.btnStartDemo.addEventListener('click', onStartDemo);
+    // Boton voz
+    if (els.btnStartDemo && onStartDemo) {
+        els.btnStartDemo.addEventListener('click', onStartDemo);
     }
 
-    // Boton de volver
-    if (elements.btnBack) {
-        elements.btnBack.addEventListener('click', () => {
-            setMode(MODES.BROWSE);
-        });
+    // Boton volver
+    if (els.btnBack) {
+        els.btnBack.addEventListener('click', () => setMode(MODES.BROWSE));
+    }
+    if (els.btnBackCart) {
+        els.btnBackCart.addEventListener('click', () => setMode(MODES.BROWSE));
     }
 
-    // Boton limpiar log
-    if (elements.btnClearLog) {
-        elements.btnClearLog.addEventListener('click', () => {
-            clearLogs();
-        });
+    // Boton carrito
+    if (els.btnCart) {
+        els.btnCart.addEventListener('click', () => setMode(MODES.CART));
     }
 
-    // Filtro de categoria
-    if (elements.filterCategory) {
-        elements.filterCategory.addEventListener('click', (e) => {
-            const btn = e.target.closest('.filter-btn');
+    // Filtros
+    if (els.filtersBar) {
+        els.filtersBar.addEventListener('click', (e) => {
+            const btn = e.target.closest('.filter-chip');
             if (!btn) return;
 
-            const category = btn.dataset.category || null;
-            setFilterCategory(category);
+            if (btn.dataset.category !== undefined) {
+                const cat = btn.dataset.category || null;
+                setFilterCategory(cat);
+            } else if (btn.dataset.nutriscore !== undefined) {
+                const ns = btn.dataset.nutriscore || null;
+                const state = getState();
+                // Toggle: si ya está activo, desactivar
+                if (state.filters.nutriscore === ns) {
+                    setFilterNutriscore(null);
+                } else {
+                    setFilterNutriscore(ns);
+                }
+            }
         });
     }
 
-    // Filtro de nutriscore
-    if (elements.filterNutriscore) {
-        elements.filterNutriscore.addEventListener('click', (e) => {
-            const btn = e.target.closest('.filter-btn');
-            if (!btn) return;
-
-            const nutriscore = btn.dataset.nutriscore || null;
-            setFilterNutriscore(nutriscore);
-        });
-    }
-
-    // Boton limpiar filtros
-    if (elements.btnClearFilters) {
-        elements.btnClearFilters.addEventListener('click', () => {
-            clearFilters();
-        });
-    }
-
-    // Navegacion por teclado (para accesibilidad)
+    // Teclado global
     document.addEventListener('keydown', (e) => {
         const state = getState();
-        if (!state.demoStarted) return;
 
-        switch (e.key) {
-            case 'Escape':
-                if (state.currentMode !== MODES.BROWSE) {
-                    setMode(MODES.BROWSE);
-                }
-                break;
-            case 'c':
-            case 'C':
-                if (e.ctrlKey || e.metaKey) return; // No interferir con copy
+        if (e.key === 'Escape' && state.currentMode !== MODES.BROWSE) {
+            setMode(MODES.BROWSE);
+        }
+        if ((e.key === 'c' || e.key === 'C') && !e.ctrlKey && !e.metaKey) {
+            if (state.currentMode === MODES.BROWSE) {
                 setMode(MODES.CART);
-                break;
+            }
         }
     });
 }
 
 /**
- * Inicializa el modulo de UI
- * @param {Function} onStartDemo - Callback cuando se inicia la demo
+ * Muestra estado de carga de un servicio
  */
-export function initUI(onStartDemo) {
-    // Inicializar referencias al DOM
-    initElements();
-
-    // Configurar event listeners
-    setupEventListeners(onStartDemo);
-
-    // Suscribirse a cambios de estado
-    subscribe(onStateChange);
-
-    // Renderizar estado inicial
-    const state = getState();
-    onStateChange(state, {});
-
-    console.log('[UI] Modulo inicializado');
+export function showLoadingStatus(service) {
+    console.log(`[UI] Cargando servicio: ${service}`);
 }
 
 /**
- * Muestra un indicador de carga en un servicio
- * @param {string} service - Nombre del servicio
+ * Inicializa UI
  */
-export function showLoadingStatus(service) {
-    const elementMap = {
-        camera: elements.statusCamera,
-        microphone: elements.statusMic,
-        model: elements.statusModel,
-        voiceActive: elements.statusVoice
-    };
+export function initUI(onStartDemo) {
+    initElements();
+    setupEventListeners(onStartDemo);
+    subscribe(onStateChange);
 
-    const element = elementMap[service];
-    if (element) {
-        element.classList.remove('status-off', 'status-on');
-        element.classList.add('status-loading');
-    }
+    const state = getState();
+    onStateChange(state, {});
+
+    console.log('[UI] Inicializado');
 }
 
-// TODO: Agregar animaciones de transicion entre vistas
-// TODO: Implementar feedback visual para gestos detectados
-// TODO: Agregar indicador de voz escuchando
-// TODO: Mejorar accesibilidad con ARIA labels
-
-export default {
-    initUI,
-    showLoadingStatus
-};
+export default { initUI };

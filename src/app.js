@@ -18,7 +18,7 @@ const APP_VERSION = '1.0.0';
  */
 async function loadProducts() {
     try {
-        const response = await fetch('./data/products.json');
+        const response = await fetch('/data/products.json');
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}`);
         }
@@ -81,6 +81,9 @@ async function initMultimodalServices() {
     }
 
     // Inicializar modulo de gestos (camara + modelo MediaPipe)
+    // TEMPORALMENTE DESHABILITADO - El modelo MediaPipe puede fallar en algunos entornos
+    // TODO: Rehabilitar cuando se resuelva el error de 'forVisionTasks'
+    /*
     if (isGesturesSupported()) {
         showLoadingStatus('camera');
         showLoadingStatus('model');
@@ -96,43 +99,37 @@ async function initMultimodalServices() {
     } else {
         addLog('error', 'getUserMedia no disponible');
     }
+    */
+    addLog('system', 'Gestos: deshabilitado temporalmente');
 
     return results;
 }
 
 /**
  * Handler para el boton "Iniciar Demo"
- * Inicializa todos los servicios y carga los datos
+ * Activa los servicios multimodales (voz)
+ * Los productos ya estan cargados automaticamente
  */
 async function onStartDemo() {
-    addLog('system', `Iniciando Demo Multimodal v${APP_VERSION}`);
+    addLog('system', `Iniciando servicios multimodales v${APP_VERSION}`);
     addLog('system', 'Solicitando permisos...');
 
     // Marcar demo como iniciada
     setState({ demoStarted: true });
 
     try {
-        // Cargar productos
-        await loadProducts();
-
-        // Inicializar servicios multimodales
+        // Inicializar servicios multimodales (voz)
         const serviceResults = await initMultimodalServices();
 
         // Log de resultados
         if (serviceResults.voice && serviceResults.microphone) {
             addLog('system', 'Reconocimiento de voz: ACTIVO');
+            addLog('system', 'Di "ayuda" para ver comandos disponibles');
         } else {
             addLog('system', 'Reconocimiento de voz: NO DISPONIBLE');
         }
 
-        if (serviceResults.gestures && serviceResults.camera) {
-            addLog('system', 'Deteccion de gestos: ACTIVO');
-        } else {
-            addLog('system', 'Deteccion de gestos: NO DISPONIBLE');
-        }
-
-        addLog('system', '¡Demo lista! Prueba comandos de voz o gestos');
-        addLog('system', 'Di "ayuda" para ver comandos disponibles');
+        addLog('system', '¡Demo lista! Usa teclado o voz para navegar');
 
     } catch (error) {
         addLog('error', `Error iniciando demo: ${error.message}`);
@@ -201,22 +198,24 @@ async function main() {
         return;
     }
 
-    // Inicializar UI (esto configura los event listeners)
+    // CARGAR PRODUCTOS PRIMERO (antes de UI)
+    console.log('[App] Cargando productos...');
+    const products = await loadProducts();
+    console.log('[App] Productos cargados:', products?.length);
+
+    // Inicializar UI (esto configura los event listeners y renderiza)
     initUI(onStartDemo);
 
-    // Intentar registrar Service Worker
-    await registerServiceWorker();
+    // Intentar registrar Service Worker (en background)
+    registerServiceWorker();
 
     // Log inicial
-    addLog('system', 'Aplicacion cargada correctamente');
-    addLog('system', 'Presiona "Iniciar Demo" para comenzar');
+    addLog('system', `${products?.length || 0} productos cargados`);
+    addLog('system', 'Usa ↑↓ para navegar, Enter para detalles');
 
     // Mostrar info de compatibilidad
     if (!compat.speechRecognition) {
         addLog('system', 'Nota: Reconocimiento de voz no disponible en este navegador');
-    }
-    if (!compat.getUserMedia) {
-        addLog('system', 'Nota: Camara no disponible en este navegador');
     }
 
     console.log('[App] Inicializacion completa');
