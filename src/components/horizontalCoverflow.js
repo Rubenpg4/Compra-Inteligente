@@ -209,6 +209,7 @@ export function prev() {
         return false;
     }
     if (state.activeIndex > 0) {
+        console.log('[Coverflow] Retrocediendo al producto anterior');
         state.activeIndex--;
         render();
         return true;
@@ -223,6 +224,7 @@ export function next() {
         return false;
     }
     if (state.activeIndex < state.products.length - 1) {
+        console.log('[Coverflow] Avanzando al siguiente producto');
         state.activeIndex++;
         render();
         return true;
@@ -235,6 +237,13 @@ export function selectActive() {
     if (product) {
         setMode(MODES.DETAILS, { product });
     }
+}
+
+/**
+ * Retorna el producto actualmente en foco (para uso externo)
+ */
+export function getActiveProduct() {
+    return getProductAtOffset(0);
 }
 
 export function addActiveToCart() {
@@ -307,8 +316,27 @@ function handleWheel(e) {
 let initialized = false;
 
 export function updateHorizontalCoverflow(products) {
-    state.products = products || [];
-    state.activeIndex = 0;
+    const newProducts = products || [];
+
+    // Logic: Try to keep the same product focused
+    let newIndex = 0;
+
+    if (state.products.length > 0 && state.activeIndex < state.products.length) {
+        const currentProduct = state.products[state.activeIndex];
+        // Buscar este producto en la nueva lista
+        const foundIndex = newProducts.findIndex(p => p.id === currentProduct.id);
+
+        if (foundIndex !== -1) {
+            // El producto sigue existiendo, mantenemos foco en el
+            console.log(`[Coverflow] Manteniendo foco en producto ${currentProduct.name} (idx ${foundIndex})`);
+            newIndex = foundIndex;
+        } else {
+            console.log('[Coverflow] Producto activo ya no existe, reset a 0');
+        }
+    }
+
+    state.products = newProducts;
+    state.activeIndex = newIndex;
     render();
 }
 
@@ -330,4 +358,4 @@ export function renderHorizontalCoverflow(containerEl, products) {
     return { next, prev, selectActive, addActiveToCart, update: updateHorizontalCoverflow };
 }
 
-export default { renderHorizontalCoverflow, updateHorizontalCoverflow, next, prev, selectActive, addActiveToCart };
+export default { renderHorizontalCoverflow, updateHorizontalCoverflow, next, prev, selectActive, addActiveToCart, getActiveProduct };

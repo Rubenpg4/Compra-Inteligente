@@ -284,10 +284,15 @@ function onStateChange(state, prevState) {
 
     updateCartCount();
 
-    // Boton voz
-    if (els.btnStartDemo && state.demoStarted) {
-        els.btnStartDemo.classList.add('active');
-        els.btnStartDemo.querySelector('span').textContent = 'Voz activa';
+    // Boton cámara
+    if (els.btnStartDemo) {
+        if (state.demoStarted) {
+            els.btnStartDemo.classList.add('active');
+            els.btnStartDemo.querySelector('span').textContent = 'Cámara activa';
+        } else {
+            els.btnStartDemo.classList.remove('active');
+            els.btnStartDemo.querySelector('span').textContent = 'Cámara';
+        }
     }
 }
 

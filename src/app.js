@@ -7,7 +7,7 @@
 import { setState, setProducts, addLog, getState } from './store.js';
 import { initUI, showLoadingStatus } from './ui.js';
 import { initVoice, requestMicrophonePermission, startListening, isSupported as isVoiceSupported } from './voice.js';
-import { init as initGesturesModule, startDetection, isSupported as isGesturesSupported } from './gestures.js';
+import { init as initGesturesModule, startDetection, isSupported as isGesturesSupported, stopCamera } from './gestures.js';
 
 // Version de la aplicacion
 const APP_VERSION = '1.0.0';
@@ -81,9 +81,7 @@ async function initMultimodalServices() {
     }
 
     // Inicializar modulo de gestos (camara + modelo MediaPipe)
-    // TEMPORALMENTE DESHABILITADO - El modelo MediaPipe puede fallar en algunos entornos
-    // TODO: Rehabilitar cuando se resuelva el error de 'forVisionTasks'
-    /*
+    // Inicializar modulo de gestos (camara + modelo MediaPipe)
     if (isGesturesSupported()) {
         showLoadingStatus('camera');
         showLoadingStatus('model');
@@ -99,8 +97,6 @@ async function initMultimodalServices() {
     } else {
         addLog('error', 'getUserMedia no disponible');
     }
-    */
-    addLog('system', 'Gestos: deshabilitado temporalmente');
 
     return results;
 }
@@ -113,6 +109,19 @@ async function initMultimodalServices() {
 async function onStartDemo() {
     addLog('system', `Iniciando servicios multimodales v${APP_VERSION}`);
     addLog('system', 'Solicitando permisos...');
+
+    const state = getState();
+    if (state.demoStarted) {
+        addLog('system', 'Desactivando cámara...');
+        try {
+            stopCamera();
+        } catch (e) {
+            console.error('[App] Error al detener cámara:', e);
+            addLog('error', 'Error al detener cámara');
+        }
+        setState({ demoStarted: false });
+        return;
+    }
 
     // Marcar demo como iniciada
     setState({ demoStarted: true });

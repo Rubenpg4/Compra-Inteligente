@@ -164,6 +164,30 @@ export function removeFromCart(productId) {
 }
 
 /**
+ * Decrementa la cantidad de un producto en el carrito
+ * @param {Object} product - Producto a decrementar
+ */
+export function decreaseCartItem(product) {
+    const existingItem = state.cart.find(item => item.id === product.id);
+    if (!existingItem) return;
+
+    let newCart;
+    if (existingItem.cartQty > 1) {
+        newCart = state.cart.map(item =>
+            item.id === product.id
+                ? { ...item, cartQty: item.cartQty - 1 }
+                : item
+        );
+        addLog('cart', `Producto decrementado: ${product.name}`);
+    } else {
+        // Eliminar si llega a 0
+        newCart = state.cart.filter(item => item.id !== product.id);
+        addLog('cart', `Producto eliminado: ${product.name}`);
+    }
+    setState({ cart: newCart });
+}
+
+/**
  * Carga los productos en el estado
  * @param {Array} products - Lista de productos
  */
@@ -274,6 +298,7 @@ export default {
     setServiceStatus,
     addToCart,
     removeFromCart,
+    decreaseCartItem,
     setProducts,
     addLog,
     clearLogs,

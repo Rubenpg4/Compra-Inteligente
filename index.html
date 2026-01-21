@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Compra Inteligente - Tu supermercado online</title>
+    <link rel="icon" type="image/png" href="assets/flavicon.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -88,7 +90,7 @@
             left: 0;
             right: 0;
             height: 60%;
-            background: linear-gradient(to bottom, transparent, rgba(0,0,0,0.8));
+            background: linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.8));
             pointer-events: none;
         }
 
@@ -105,7 +107,7 @@
             font-weight: 700;
             font-size: 16px;
             color: white;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
         }
 
         .card-info {
@@ -171,7 +173,7 @@
 
         .product-quantity {
             padding: 6px 14px;
-            background: rgba(255,255,255,0.1);
+            background: rgba(255, 255, 255, 0.1);
             border-radius: 20px;
             font-size: 0.85rem;
             color: #d1d5db;
@@ -248,8 +250,15 @@
         }
 
         @keyframes bounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
         }
 
         /* Empty State */
@@ -268,8 +277,17 @@
         }
 
         @keyframes pulse {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.6; transform: scale(0.95); }
+
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 0.6;
+                transform: scale(0.95);
+            }
         }
 
         .empty-state h3 {
@@ -309,7 +327,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: linear-gradient(to bottom, rgba(15,15,26,0.95), transparent);
+            background: linear-gradient(to bottom, rgba(15, 15, 26, 0.95), transparent);
         }
 
         .logo {
@@ -331,8 +349,8 @@
         .cart-btn {
             position: relative;
             padding: 10px 20px;
-            background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.2);
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 12px;
             color: white;
             cursor: pointer;
@@ -343,7 +361,7 @@
         }
 
         .cart-btn:hover {
-            background: rgba(255,255,255,0.15);
+            background: rgba(255, 255, 255, 0.15);
         }
 
         .cart-count {
@@ -412,8 +430,8 @@
 
         .filter-chip {
             padding: 8px 16px;
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 20px;
             color: #9ca3af;
             font-size: 0.85rem;
@@ -422,7 +440,7 @@
         }
 
         .filter-chip:hover {
-            background: rgba(255,255,255,0.1);
+            background: rgba(255, 255, 255, 0.1);
             color: white;
         }
 
@@ -433,15 +451,40 @@
         }
 
         /* Nutriscore colors */
-        .filter-chip.nutri-A.active { background: #22c55e; border-color: #22c55e; }
-        .filter-chip.nutri-B.active { background: #84cc16; border-color: #84cc16; }
-        .filter-chip.nutri-C.active { background: #eab308; border-color: #eab308; color: #000; }
-        .filter-chip.nutri-D.active { background: #f97316; border-color: #f97316; }
-        .filter-chip.nutri-E.active { background: #ef4444; border-color: #ef4444; }
+        .filter-chip.nutri-A.active {
+            background: #22c55e;
+            border-color: #22c55e;
+        }
+
+        .filter-chip.nutri-B.active {
+            background: #84cc16;
+            border-color: #84cc16;
+        }
+
+        .filter-chip.nutri-C.active {
+            background: #eab308;
+            border-color: #eab308;
+            color: #000;
+        }
+
+        .filter-chip.nutri-D.active {
+            background: #f97316;
+            border-color: #f97316;
+        }
+
+        .filter-chip.nutri-E.active {
+            background: #ef4444;
+            border-color: #ef4444;
+        }
 
         /* ========== VIEWS ========== */
-        .view { display: none; }
-        .view.active { display: block; }
+        .view {
+            display: none;
+        }
+
+        .view.active {
+            display: block;
+        }
 
         /* Details View */
         #view-details {
@@ -489,7 +532,7 @@
             align-items: center;
             gap: 16px;
             padding: 16px;
-            background: rgba(255,255,255,0.05);
+            background: rgba(255, 255, 255, 0.05);
             border-radius: 16px;
             margin-bottom: 12px;
         }
@@ -523,14 +566,245 @@
             color: white;
         }
 
-        /* Hide video */
+        /* Video Debug View */
         #gesture-video {
-            display: none;
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 240px;
+            height: 180px;
+            object-fit: cover;
+            border-radius: 12px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            z-index: 9999;
+            transform: scaleX(-1);
+            /* Mirror effect */
+            background: #000;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
         }
 
-        /* Hide gesture cursor initially */
+        /* Cursor */
         #gesture-cursor {
-            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 24px;
+            height: 24px;
+            border: 2px solid white;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 10000;
+            transform: translate(-50%, -50%);
+            transition: width 0.2s, height 0.2s, background-color 0.2s;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        #gesture-cursor.active {
+            background: rgba(59, 130, 246, 0.5);
+            border-color: #60a5fa;
+        }
+
+        /* Gestures Feedback */
+        #gesture-cursor.pinch {
+            width: 16px;
+            height: 16px;
+            background: #3b82f6;
+            border-color: white;
+            transform: translate(-50%, -50%) scale(0.8);
+        }
+
+        #gesture-cursor.palm {
+            width: 40px;
+            height: 40px;
+            background: rgba(239, 68, 68, 0.4);
+            /* Red tint */
+            border-color: #ef4444;
+        }
+
+        #gesture-cursor.ok-gesture {
+            background: rgba(34, 197, 94, 0.6);
+            /* Green */
+            border-color: #22c55e;
+            box-shadow: 0 0 0 10px rgba(34, 197, 94, 0.2);
+        }
+
+        #gesture-cursor.italian-gesture {
+            background: rgba(234, 179, 8, 0.6);
+            /* Yellow */
+            border-color: #eab308;
+            box-shadow: 0 0 0 10px rgba(234, 179, 8, 0.2);
+            width: 12px;
+            height: 12px;
+        }
+
+        #gesture-cursor.swipe-left {
+            transform: translate(-50%, -50%) translateX(-40px);
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        #gesture-cursor.swipe-right {
+            transform: translate(-50%, -50%) translateX(40px);
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        .gesture-hover {
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.5) !important;
+            transform: scale(1.02) !important;
+        }
+
+        /* Gesture Text Feedback */
+        #gesture-feedback {
+            position: fixed;
+            bottom: 210px;
+            /* Above video */
+            right: 20px;
+            width: 240px;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: white;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            z-index: 10000;
+        }
+
+        #gesture-feedback.visible {
+            opacity: 1;
+        }
+
+        /* ========== GESTURE LEGEND ========== */
+        #gesture-legend {
+            position: fixed;
+            right: 20px;
+            /* Hueco expandido: más alto */
+            top: 85px;
+            bottom: 205px;
+
+            /* Grid layout filling space */
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-auto-rows: 1fr;
+            /* Filas se estiran para llenar altura */
+            gap: 8px;
+
+            width: 240px;
+            z-index: 9999;
+            background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #16213e 100%);
+            padding: 8px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+            /* Evitar scroll */
+        }
+
+        .legend-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            gap: 0px;
+            /* Reducir espacio entre icono y texto */
+            padding: 8px 4px 16px 4px;
+            /* Más padding abajo para despegar del borde */
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            border: 2px solid transparent;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+            width: 100%;
+            /* Llenar columna */
+            min-height: 90px;
+            /* Asegurar altura mínima para que se vean grandes */
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Gradient fill progress overlay - vertical fill? No, keep logic simple or fill from bottom? 
+           User didn't specify direction change for progress, assuming horizontal fill is still okay or usage of existing variable.
+           Actually, the previous CSS used width: var(--gesture-progress). 
+           If the item is vertical, a horizontal fill might look weird if it cuts across icon and text.
+           Let's keep horizontal fill for now as it's a "progress bar" concept.
+        */
+        .legend-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: var(--gesture-progress, 0%);
+            background: linear-gradient(to right, rgba(255, 255, 255, 0.2) 0%, rgba(59, 130, 246, 0.4) 100%);
+            /* Slightly lighter for readability over text */
+            transition: width 0.05s linear;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* Ensure content stays above the gradient */
+        .legend-item>* {
+            position: relative;
+            z-index: 1;
+        }
+
+        .legend-item.active {
+            border-color: #3b82f6;
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.4);
+            transform: scale(1.03);
+        }
+
+        /* Success state - gesture completed */
+        .legend-item.success {
+            border-color: #22c55e;
+            box-shadow: 0 0 20px rgba(34, 197, 94, 0.5);
+            transform: scale(1.05);
+        }
+
+        .legend-item.success::before {
+            width: 100%;
+            background: linear-gradient(90deg, rgba(34, 197, 94, 0.4) 0%, rgba(34, 197, 94, 0.7) 100%);
+        }
+
+        /* Failure state - gesture interrupted */
+        .legend-item.failure {
+            border-color: #ef4444;
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.5);
+        }
+
+        .legend-item.failure::before {
+            background: linear-gradient(90deg, rgba(239, 68, 68, 0.4) 0%, rgba(239, 68, 68, 0.7) 100%);
+            /* Keep current progress width when failing */
+        }
+
+        .legend-icon {
+            width: 60px;
+            height: 60px;
+            object-fit: contain;
+            flex-shrink: 0;
+            margin-bottom: 0px;
+            /* Eliminar margen extra */
+        }
+
+        .legend-text {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+        }
+
+        .legend-gesture {
+            font-size: 0.5rem;
+            color: #9ca3af;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            margin-bottom: 1px;
+        }
+
+        .legend-action {
+            font-size: 0.65rem;
+            color: white;
+            font-weight: 500;
+            line-height: 1.1;
         }
 
         /* ========== PRODUCT GRID STYLES ========== */
@@ -599,7 +873,7 @@
             font-weight: 700;
             font-size: 14px;
             color: white;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
         }
 
         .grid-card-info {
@@ -746,12 +1020,12 @@
             border-radius: 24px;
             overflow: hidden;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5),
-                        0 0 0 1px rgba(255, 255, 255, 0.1);
+                0 0 0 1px rgba(255, 255, 255, 0.1);
         }
 
         .hcoverflow-active .hcoverflow-card-inner {
             box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.6),
-                        0 0 0 2px rgba(59, 130, 246, 0.3);
+                0 0 0 2px rgba(59, 130, 246, 0.3);
         }
 
         .hcoverflow-card-image {
@@ -778,7 +1052,7 @@
             left: 0;
             right: 0;
             height: 50%;
-            background: linear-gradient(to bottom, transparent, rgba(0,0,0,0.6));
+            background: linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.6));
             pointer-events: none;
         }
 
@@ -795,7 +1069,7 @@
             font-weight: 700;
             font-size: 18px;
             color: white;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
         }
 
         .hcoverflow-card-info {
@@ -988,6 +1262,7 @@
         }
     </style>
 </head>
+
 <body>
     <!-- Header -->
     <header class="site-header">
@@ -995,11 +1270,10 @@
         <div class="header-actions">
             <button class="voice-btn" id="btn-start-demo">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
-                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-                    <line x1="12" y1="19" x2="12" y2="23"></line>
+                    <path d="M23 7l-7 5 7 5V7z"></path>
+                    <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
                 </svg>
-                <span>Voz</span>
+                <span>Cámara</span>
             </button>
             <button class="cart-btn" id="btn-cart">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1043,7 +1317,7 @@
         <div id="view-details" class="view">
             <div class="back-link" id="btn-back">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M19 12H5M12 19l-7-7 7-7"/>
+                    <path d="M19 12H5M12 19l-7-7 7-7" />
                 </svg>
                 Volver
             </div>
@@ -1056,14 +1330,16 @@
                 <h2 class="cart-title">Tu Carrito</h2>
                 <div class="back-link" id="btn-back-cart">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M19 12H5M12 19l-7-7 7-7"/>
+                        <path d="M19 12H5M12 19l-7-7 7-7" />
                     </svg>
                     Seguir comprando
                 </div>
             </div>
             <div id="cart-items"></div>
-            <div id="cart-total" style="margin-top: 24px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.1);">
-                <span style="font-size: 1.25rem; font-weight: 600; color: white;">Total: <span id="total-amount">0 items</span></span>
+            <div id="cart-total"
+                style="margin-top: 24px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.1);">
+                <span style="font-size: 1.25rem; font-weight: 600; color: white;">Total: <span id="total-amount">0
+                        items</span></span>
             </div>
         </div>
     </main>
@@ -1071,7 +1347,73 @@
     <!-- Hidden elements -->
     <video id="gesture-video" autoplay playsinline></video>
     <div id="gesture-cursor"></div>
+    <div id="gesture-feedback"></div>
+
+    <!-- Gesture Legend -->
+    <div id="gesture-legend">
+        <!-- Fila 1: Navegación Swipe -->
+        <div class="legend-item" data-gesture="Swipe_Left">
+            <img class="legend-icon" src="assets/icons/Swipe_left.png" alt="Swipe Left">
+            <div class="legend-text">
+                <span class="legend-gesture">Swipe Izq</span>
+                <span class="legend-action">Siguiente</span>
+            </div>
+        </div>
+        <div class="legend-item" data-gesture="Swipe_Right">
+            <img class="legend-icon" src="assets/icons/Swipe_right.png" alt="Swipe Right">
+            <div class="legend-text">
+                <span class="legend-gesture">Swipe Der</span>
+                <span class="legend-action">Anterior</span>
+            </div>
+        </div>
+        <!-- Fila 2: Pulgares (Carrito) -->
+        <div class="legend-item" data-gesture="Thumb_Up">
+            <img class="legend-icon" src="assets/icons/Thumb_up.png" alt="Thumbs Up">
+            <div class="legend-text">
+                <span class="legend-gesture">Pulgar Arriba</span>
+                <span class="legend-action">+1 Carrito</span>
+            </div>
+        </div>
+        <div class="legend-item" data-gesture="Thumb_Down">
+            <img class="legend-icon" src="assets/icons/Thumb_down.png" alt="Thumbs Down">
+            <div class="legend-text">
+                <span class="legend-gesture">Pulgar Abajo</span>
+                <span class="legend-action">-1 Carrito</span>
+            </div>
+        </div>
+        <!-- Fila 3: Navegación Modos -->
+        <div class="legend-item" data-gesture="Closed_Fist">
+            <img class="legend-icon" src="assets/icons/Puno_cerrado.png" alt="Fist">
+            <div class="legend-text">
+                <span class="legend-gesture">Puño</span>
+                <span class="legend-action">Ver Detalles</span>
+            </div>
+        </div>
+        <div class="legend-item" data-gesture="Open_Palm">
+            <img class="legend-icon" src="assets/icons/Palma_mano.png" alt="Palm">
+            <div class="legend-text">
+                <span class="legend-gesture">Palma</span>
+                <span class="legend-action">Volver</span>
+            </div>
+        </div>
+        <!-- Fila 4: Acciones Especiales -->
+        <div class="legend-item" data-gesture="Italian">
+            <img class="legend-icon" src="assets/icons/Italian.png" alt="Italian">
+            <div class="legend-text">
+                <span class="legend-gesture">Italiano</span>
+                <span class="legend-action">+2 Carrito</span>
+            </div>
+        </div>
+        <div class="legend-item" data-gesture="Victory">
+            <img class="legend-icon" src="assets/icons/Victory.png" alt="Victory">
+            <div class="legend-text">
+                <span class="legend-gesture">Victoria</span>
+                <span class="legend-action">Ir Carrito</span>
+            </div>
+        </div>
+    </div>
 
     <script type="module" src="src/app.js"></script>
 </body>
+
 </html>
