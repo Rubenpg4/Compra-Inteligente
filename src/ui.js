@@ -5,6 +5,7 @@
 
 import {
     getState,
+    setState,
     subscribe,
     setMode,
     addToCart,
@@ -13,7 +14,8 @@ import {
     setFilterCategory,
     setFilterNutriscore,
     clearFilters,
-    getFilteredProducts
+    getFilteredProducts,
+    setCartActiveIndex
 } from './store.js';
 
 import { renderGrid, updateGrid } from './components/productGrid.js';
@@ -24,8 +26,12 @@ let coverflowInstance = null;
 let currentViewMode = 'coverflow'; // 'grid' o 'coverflow'
 let userSelectedViewType = 'coverflow'; // Vista seleccionada por el usuario: 'grid' o 'coverflow'
 
+export function isGridViewActive() {
+    return userSelectedViewType === 'grid';
+}
+
 // Estado del carrito coverflow
-let cartActiveIndex = 0;
+// let cartActiveIndex = 0; // Moved to store
 let currentCart = [];
 
 // Referencias DOM
@@ -45,7 +51,120 @@ function initElements() {
     els.viewBrowse = document.getElementById('view-browse');
     els.viewDetails = document.getElementById('view-details');
     els.viewCart = document.getElementById('view-cart');
+    els.checkoutModal = document.getElementById('checkout-modal');
+
+    // Crear modal si no existe
+    if (!els.checkoutModal) {
+        els.checkoutModal = document.createElement('div');
+        els.checkoutModal.id = 'checkout-modal';
+        els.checkoutModal.style.cssText = `
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); z-index: 1000;
+            display: none; align-items: center; justify-content: center;
+            backdrop-filter: blur(8px);
+        `;
+        document.body.appendChild(els.checkoutModal);
+    }
 }
+
+function renderCheckoutModal(show) {
+    if (!els.checkoutModal) return;
+
+    if (show) {
+        els.checkoutModal.style.display = 'flex';
+        els.checkoutModal.innerHTML = `
+            <div style="
+                background: linear-gradient(135deg, #1f2937, #111827);
+                padding: 40px 60px; border-radius: 30px;
+                text-align: center; border: 1px solid rgba(255,255,255,0.1);
+                box-shadow: 0 50px 100px -20px rgba(0,0,0,0.7);
+                animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            ">
+                <style>
+                    @keyframes popIn {
+                        from { transform: scale(0.8); opacity: 0; }
+                        to { transform: scale(1); opacity: 1; }
+                    }
+                </style>
+                <div style="font-size: 5rem; margin-bottom: 20px;">🛍️</div>
+                <h2 style="font-size: 2.5rem; margin-bottom: 10px; color: white;">¿Confirmar Compra?</h2>
+                <p style="font-size: 1.25rem; color: #9ca3af; margin-bottom: 40px;">Usa gestos o haz click en los iconos:</p>
+                
+                <div style="display: flex; gap: 60px; justify-content: center;">
+                    <!-- Boton Aceptar -->
+                    <div id="checkout-btn-accept" style="
+                        display: flex; flex-direction: column; align-items: center; gap: 15px;
+                        cursor: pointer; transition: transform 0.2s;
+                    " onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+                        <div style="
+                            width: 100px; height: 100px; background: rgba(34, 197, 94, 0.2);
+                            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+                            border: 2px solid #22c55e;
+                        ">
+                            <img src="assets/icons/Victory.png" alt="Aceptar" style="width: 60px; height: 60px; object-fit: contain;">
+                        </div>
+                        <div style="text-align: center;">
+                            <span style="color: #22c55e; font-weight: bold; font-size: 1.4rem; display: block;">ACEPTAR</span>
+                            <span style="color: #6b7280; font-size: 0.9rem;">(Victoria)</span>
+                        </div>
+                    </div>
+
+                    <!-- Boton Cancelar -->
+                    <div id="checkout-btn-cancel" style="
+                        display: flex; flex-direction: column; align-items: center; gap: 15px;
+                        cursor: pointer; transition: transform 0.2s;
+                    " onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+                        <div style="
+                            width: 100px; height: 100px; background: rgba(239, 68, 68, 0.2);
+                            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+                            border: 2px solid #ef4444;
+                        ">
+                            <img src="assets/icons/Palma_mano.png" alt="Cancelar" style="width: 60px; height: 60px; object-fit: contain;">
+                        </div>
+                        <div style="text-align: center;">
+                            <span style="color: #ef4444; font-weight: bold; font-size: 1.4rem; display: block;">CANCELAR</span>
+                            <span style="color: #6b7280; font-size: 0.9rem;">(Mano Abierta)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Event Listeners para clicks
+        setTimeout(() => {
+            // ACEPTAR
+            document.getElementById('checkout-btn-accept')?.addEventListener('click', () => {
+                handleCheckoutSuccess();
+            });
+
+            // CANCELAR
+            document.getElementById('checkout-btn-cancel')?.addEventListener('click', () => {
+                setMode(MODES.CART);
+                showFeedback('CANCELADO', 'error');
+            });
+        }, 100);
+    } else {
+        els.checkoutModal.style.display = 'none';
+        els.checkoutModal.innerHTML = '';
+    }
+}
+
+/**
+ * Maneja el flujo de éxito de la compra
+ * Muestra feedback, espera y luego limpia el estado
+ */
+export function handleCheckoutSuccess() {
+    showFeedback('¡COMPRA REALIZADA! 🥳', 'success');
+
+    // Esperar minimamente para feedback y limpiar
+    setTimeout(() => {
+        // Vaciar carrito y volver a inicio simultaneamente
+        setState({ cart: [] });
+        setMode(MODES.BROWSE);
+    }, 100);
+}
+
+
 
 // Imagenes por categoria
 const categoryImages = {
@@ -58,6 +177,60 @@ const categoryImages = {
 const nutriscoreColors = {
     A: '#22c55e', B: '#84cc16', C: '#eab308', D: '#f97316', E: '#ef4444'
 };
+
+/**
+ * Muestra un mensaje de feedback visual
+ */
+export function showFeedback(text, type = 'info') {
+    let feedbackElement = document.getElementById('gesture-feedback');
+
+    // Crear elemento si no existe (Lazy creation)
+    if (!feedbackElement) {
+        feedbackElement = document.createElement('div');
+        feedbackElement.id = 'gesture-feedback';
+        feedbackElement.className = 'gesture-feedback';
+        feedbackElement.style.cssText = `
+            position: fixed; bottom: 20px; left: calc(50% - 30px); transform: translateX(-50%);
+            background: rgba(0,0,0,0.85); color: white; padding: 20px 40px;
+            border-radius: 50px; font-size: 2rem; font-weight: bold;
+            display: none; align-items: center; justify-content: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); z-index: 2000;
+            backdrop-filter: blur(10px); border: 2px solid rgba(255,255,255,0.1);
+            transition: opacity 0.3s, transform 0.3s;
+        `;
+        document.body.appendChild(feedbackElement);
+    }
+
+    feedbackElement.textContent = text;
+    feedbackElement.style.display = 'flex';
+
+    // Reset transform for animation
+    feedbackElement.style.transform = 'translateX(-50%) scale(0.9)';
+
+    requestAnimationFrame(() => {
+        feedbackElement.style.opacity = '1';
+        feedbackElement.style.transform = 'translateX(-50%) scale(1)';
+    });
+
+    // Añadir color segun el tipo
+    if (type === 'success') feedbackElement.style.color = '#22c55e';
+    else if (type === 'warning') feedbackElement.style.color = '#eab308';
+    else if (type === 'error') feedbackElement.style.color = '#ef4444';
+    else feedbackElement.style.color = 'white';
+
+    // Ocultar despues de un tiempo
+    setTimeout(() => {
+        if (feedbackElement.textContent === text) {
+            feedbackElement.style.opacity = '0';
+            feedbackElement.style.transform = 'translateX(-50%) scale(0.9)';
+            setTimeout(() => {
+                if (feedbackElement.style.opacity === '0') {
+                    feedbackElement.style.display = 'none';
+                }
+            }, 300);
+        }
+    }, 1500);
+}
 
 function getProductImage(product) {
     return categoryImages[product.category] || categoryImages.snacks;
@@ -130,6 +303,22 @@ function updateViewButtonsUI(viewType) {
     });
 }
 
+export function triggerDetailAddAnimation(duration = 1000) {
+    const btn = document.getElementById('detail-add-cart');
+    if (btn) {
+        const originalContent = btn.innerHTML;
+        const originalBg = btn.style.background;
+
+        btn.innerHTML = '<span>Añadido ✓</span>';
+        btn.style.background = 'linear-gradient(135deg, #22c55e, #16a34a)';
+
+        setTimeout(() => {
+            btn.innerHTML = originalContent;
+            btn.style.background = originalBg;
+        }, duration);
+    }
+}
+
 /**
  * Renderiza detalles del producto
  */
@@ -185,13 +374,11 @@ function renderProductDetails(product) {
         </div>
     `;
 
+
+
     document.getElementById('detail-add-cart')?.addEventListener('click', () => {
         addToCart(product);
-        const btn = document.getElementById('detail-add-cart');
-        if (btn) {
-            btn.innerHTML = '<span>Añadido ✓</span>';
-            btn.style.background = 'linear-gradient(135deg, #22c55e, #16a34a)';
-        }
+        triggerDetailAddAnimation();
     });
 }
 
@@ -238,7 +425,8 @@ function renderCartCard(item, position) {
  * Obtiene item del carrito en offset relativo al activo
  */
 function getCartItemAtOffset(offset) {
-    const index = cartActiveIndex + offset;
+    const state = getState();
+    const index = state.cartActiveIndex + offset;
     if (index < 0 || index >= currentCart.length) return null;
     return currentCart[index];
 }
@@ -250,6 +438,8 @@ function getCartItemAtOffset(offset) {
 function renderCartCoverflow(direction = null) {
     if (!els.cartItems) return;
 
+    const state = getState();
+    const cartActiveIndex = state.cartActiveIndex;
     const slideClass = direction ? `slide-${direction}` : '';
 
     els.cartItems.innerHTML = `
@@ -290,15 +480,17 @@ function renderCartCoverflow(direction = null) {
  * Navegación del carrito con animación
  */
 function cartPrev() {
-    if (cartActiveIndex > 0) {
-        cartActiveIndex--;
+    const state = getState();
+    if (state.cartActiveIndex > 0) {
+        setCartActiveIndex(state.cartActiveIndex - 1);
         renderCartCoverflow('right');
     }
 }
 
 function cartNext() {
-    if (cartActiveIndex < currentCart.length - 1) {
-        cartActiveIndex++;
+    const state = getState();
+    if (state.cartActiveIndex < currentCart.length - 1) {
+        setCartActiveIndex(state.cartActiveIndex + 1);
         renderCartCoverflow('left');
     }
 }
@@ -312,7 +504,7 @@ function renderCart(cart) {
     currentCart = cart;
 
     if (cart.length === 0) {
-        cartActiveIndex = 0;
+
         els.cartItems.innerHTML = `
             <div class="cart-empty">
                 <div class="cart-empty-icon">🛒</div>
@@ -323,16 +515,55 @@ function renderCart(cart) {
         return;
     }
 
-    // Ajustar índice si es necesario
-    if (cartActiveIndex >= cart.length) {
-        cartActiveIndex = cart.length - 1;
-    }
+    // Ajustar índice (manejado por store)
+    const state = getState();
+    // No sobreescribimos start.cartActiveIndex aquí, dejemos que renderCartCoverflow lo lea.
 
     renderCartCoverflow();
 
     if (els.totalAmount) {
         const total = cart.reduce((sum, item) => sum + item.cartQty, 0);
         els.totalAmount.textContent = `${total} item${total !== 1 ? 's' : ''}`;
+
+        // Obtener contenedor del total y aplicar layout flex
+        const totalContainer = document.getElementById('cart-total');
+        if (totalContainer) {
+            totalContainer.style.display = 'flex';
+            totalContainer.style.alignItems = 'center';
+            totalContainer.style.justifyContent = 'space-between';
+            totalContainer.style.flexWrap = 'wrap';
+
+            let buyBtn = document.getElementById('btn-cart-buy');
+            if (!buyBtn) {
+                buyBtn = document.createElement('button');
+                buyBtn.id = 'btn-cart-buy';
+                buyBtn.addEventListener('click', () => setMode(MODES.CHECKOUT));
+                totalContainer.appendChild(buyBtn);
+            }
+
+            // Aplicar estilo "Añadir al carrito" (Azul) + Icono Victory
+            buyBtn.style.cssText = `
+                display: inline-flex; align-items: center; gap: 12px;
+                padding: 16px 32px; background: linear-gradient(135deg, #3b82f6, #2563eb);
+                color: white; border: none; border-radius: 16px;
+                font-size: 1.1rem; font-weight: 600; cursor: pointer;
+                transition: all 0.3s; box-shadow: 0 10px 30px -10px rgba(59,130,246,0.5);
+            `;
+
+            // Efectos hover manuales (ya que es inline style)
+            buyBtn.onmouseenter = () => {
+                buyBtn.style.transform = 'translateY(-2px)';
+                buyBtn.style.boxShadow = '0 15px 40px -10px rgba(59, 130, 246, 0.6)';
+            };
+            buyBtn.onmouseleave = () => {
+                buyBtn.style.transform = 'translateY(0)';
+                buyBtn.style.boxShadow = '0 10px 30px -10px rgba(59, 130, 246, 0.5)';
+            };
+
+            buyBtn.innerHTML = `
+                <span style="font-size: 1.2rem;">Finalizar Compra</span>
+            `;
+        }
     }
 }
 
@@ -371,7 +602,8 @@ function updateFiltersUI(filters) {
     // Categoria
     els.filtersBar.querySelectorAll('[data-category]').forEach(btn => {
         const cat = btn.dataset.category || null;
-        btn.classList.toggle('active', cat === (filters.category || ''));
+        const filterCat = filters.category || null;
+        btn.classList.toggle('active', cat === filterCat);
     });
 
     // Nutriscore
@@ -407,12 +639,23 @@ function onStateChange(state, prevState) {
         case MODES.BROWSE:
             renderProducts(filteredProducts);
             updateFiltersUI(state.filters);
+            renderCheckoutModal(false);
             break;
         case MODES.DETAILS:
             renderProductDetails(state.selectedProduct);
+            renderCheckoutModal(false);
             break;
         case MODES.CART:
             renderCart(state.cart);
+            renderCheckoutModal(false);
+            break;
+        case MODES.CHECKOUT:
+            // Aseguramos que la vista base sea CART
+            if (!els.viewCart.classList.contains('active')) {
+                els.viewCart.classList.add('active');
+                renderCart(state.cart); // Re-render cart visible behind
+            }
+            renderCheckoutModal(true);
             break;
     }
 
