@@ -21,7 +21,12 @@ import { renderHorizontalCoverflow, updateHorizontalCoverflow } from './componen
 
 let gridInstance = null;
 let coverflowInstance = null;
-let currentViewMode = 'grid'; // 'grid' o 'coverflow'
+let currentViewMode = 'coverflow'; // 'grid' o 'coverflow'
+let userSelectedViewType = 'coverflow'; // Vista seleccionada por el usuario: 'grid' o 'coverflow'
+
+// Estado del carrito coverflow
+let cartActiveIndex = 0;
+let currentCart = [];
 
 // Referencias DOM
 const els = {};
@@ -67,13 +72,13 @@ function hasActiveFilters() {
 }
 
 /**
- * Renderiza productos en grid o coverflow según filtros
+ * Renderiza productos en grid o coverflow según selección de usuario
  */
 function renderProducts(products, forceMode = null) {
     if (!els.productsGrid) return;
 
-    const useFilters = forceMode ? forceMode === 'coverflow' : hasActiveFilters();
-    const newMode = useFilters ? 'coverflow' : 'grid';
+    // Determinar el modo de vista (usa la selección del usuario)
+    const newMode = forceMode || userSelectedViewType;
 
     // Si cambiamos de modo, limpiar el contenedor
     if (newMode !== currentViewMode) {
@@ -84,20 +89,45 @@ function renderProducts(products, forceMode = null) {
     }
 
     if (newMode === 'grid') {
-        // Modo Grid (sin filtros)
+        // Modo Grid 3x3
         if (!gridInstance) {
             gridInstance = renderGrid(els.productsGrid, products);
         } else {
             updateGrid(products);
         }
     } else {
-        // Modo Coverflow horizontal (con filtros)
+        // Modo Coverflow horizontal
         if (!coverflowInstance) {
             coverflowInstance = renderHorizontalCoverflow(els.productsGrid, products);
         } else {
             updateHorizontalCoverflow(products);
         }
     }
+}
+
+/**
+ * Cambia el tipo de vista seleccionado por el usuario
+ */
+function setViewType(viewType) {
+    if (viewType === userSelectedViewType) return;
+    userSelectedViewType = viewType;
+
+    // Actualizar UI de botones de vista
+    updateViewButtonsUI(viewType);
+
+    // Re-renderizar productos con la nueva vista
+    const filteredProducts = getFilteredProducts();
+    renderProducts(filteredProducts);
+}
+
+/**
+ * Actualiza los botones de vista activos
+ */
+function updateViewButtonsUI(viewType) {
+    if (!els.filtersBar) return;
+    els.filtersBar.querySelectorAll('[data-view]').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.view === viewType);
+    });
 }
 
 /**
@@ -166,15 +196,126 @@ function renderProductDetails(product) {
 }
 
 /**
+ * Renderiza una tarjeta del carrito coverflow
+ */
+function renderCartCard(item, position) {
+    if (!item) {
+        return `<div class="cart-coverflow-card cart-coverflow-${position}" style="opacity:0; pointer-events:none;"></div>`;
+    }
+
+    const image = getProductImage(item);
+
+    // Configuración 3D por posición (horizontal)
+    const configs = {
+        'far-prev': { x: -320, scale: 0.5, opacity: 0.2, blur: 3, rotateY: 45, z: -150 },
+        'prev': { x: -180, scale: 0.75, opacity: 0.6, blur: 1, rotateY: 25, z: -80 },
+        'active': { x: 0, scale: 1, opacity: 1, blur: 0, rotateY: 0, z: 0 },
+        'next': { x: 180, scale: 0.75, opacity: 0.6, blur: 1, rotateY: -25, z: -80 },
+        'far-next': { x: 320, scale: 0.5, opacity: 0.2, blur: 3, rotateY: -45, z: -150 }
+    };
+
+    const c = configs[position] || configs.active;
+
+    return `
+        <div class="cart-coverflow-card cart-coverflow-${position}"
+             style="
+                transform: perspective(1000px) translateX(${c.x}px) translateZ(${c.z}px) scale(${c.scale}) rotateY(${c.rotateY}deg);
+                opacity: ${c.opacity};
+                filter: blur(${c.blur}px);
+                z-index: ${position === 'active' ? 50 : 10};
+             ">
+            <div class="cart-coverflow-card-inner">
+                <div class="cart-coverflow-card-image">
+                    <img src="${image}" alt="${item.name}">
+                    <div class="cart-coverflow-qty">x${item.cartQty}</div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * Obtiene item del carrito en offset relativo al activo
+ */
+function getCartItemAtOffset(offset) {
+    const index = cartActiveIndex + offset;
+    if (index < 0 || index >= currentCart.length) return null;
+    return currentCart[index];
+}
+
+/**
+ * Renderiza el coverflow del carrito
+ * @param {string} direction - Dirección de la animación: 'left', 'right', o null
+ */
+function renderCartCoverflow(direction = null) {
+    if (!els.cartItems) return;
+
+    const slideClass = direction ? `slide-${direction}` : '';
+
+    els.cartItems.innerHTML = `
+        <div class="cart-coverflow-stage">
+            <div class="cart-coverflow-track ${slideClass}">
+                ${renderCartCard(getCartItemAtOffset(-2), 'far-prev')}
+                ${renderCartCard(getCartItemAtOffset(-1), 'prev')}
+                ${renderCartCard(getCartItemAtOffset(0), 'active')}
+                ${renderCartCard(getCartItemAtOffset(1), 'next')}
+                ${renderCartCard(getCartItemAtOffset(2), 'far-next')}
+            </div>
+            <div class="cart-nav-indicator">
+                <button class="cart-nav-btn" id="cart-prev-btn" ${cartActiveIndex === 0 ? 'disabled' : ''}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M15 18l-6-6 6-6"/>
+                    </svg>
+                </button>
+                <span>${cartActiveIndex + 1} / ${currentCart.length}</span>
+                <button class="cart-nav-btn" id="cart-next-btn" ${cartActiveIndex >= currentCart.length - 1 ? 'disabled' : ''}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 18l6-6-6-6"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    `;
+
+    // Event listeners para navegación
+    els.cartItems.querySelector('#cart-prev-btn')?.addEventListener('click', cartPrev);
+    els.cartItems.querySelector('#cart-next-btn')?.addEventListener('click', cartNext);
+
+    // Click en tarjetas prev/next para navegar
+    els.cartItems.querySelector('.cart-coverflow-prev')?.addEventListener('click', cartPrev);
+    els.cartItems.querySelector('.cart-coverflow-next')?.addEventListener('click', cartNext);
+}
+
+/**
+ * Navegación del carrito con animación
+ */
+function cartPrev() {
+    if (cartActiveIndex > 0) {
+        cartActiveIndex--;
+        renderCartCoverflow('right');
+    }
+}
+
+function cartNext() {
+    if (cartActiveIndex < currentCart.length - 1) {
+        cartActiveIndex++;
+        renderCartCoverflow('left');
+    }
+}
+
+/**
  * Renderiza carrito
  */
 function renderCart(cart) {
     if (!els.cartItems) return;
 
+    currentCart = cart;
+
     if (cart.length === 0) {
+        cartActiveIndex = 0;
         els.cartItems.innerHTML = `
-            <div style="text-align: center; padding: 60px 20px; color: #6b7280;">
-                <div style="font-size: 4rem; margin-bottom: 20px;">🛒</div>
+            <div class="cart-empty">
+                <div class="cart-empty-icon">🛒</div>
                 <p>Tu carrito está vacío</p>
             </div>
         `;
@@ -182,19 +323,12 @@ function renderCart(cart) {
         return;
     }
 
-    els.cartItems.innerHTML = cart.map(item => {
-        const image = getProductImage(item);
-        return `
-            <div class="cart-item">
-                <img src="${image}" alt="${item.name}" class="cart-item-image">
-                <div class="cart-item-info">
-                    <div class="cart-item-name">${item.name}</div>
-                    <div class="cart-item-brand">${item.brand} - ${item.quantity}</div>
-                </div>
-                <span class="cart-item-qty">x${item.cartQty}</span>
-            </div>
-        `;
-    }).join('');
+    // Ajustar índice si es necesario
+    if (cartActiveIndex >= cart.length) {
+        cartActiveIndex = cart.length - 1;
+    }
+
+    renderCartCoverflow();
 
     if (els.totalAmount) {
         const total = cart.reduce((sum, item) => sum + item.cartQty, 0);
@@ -318,13 +452,17 @@ function setupEventListeners(onStartDemo) {
         els.btnCart.addEventListener('click', () => setMode(MODES.CART));
     }
 
-    // Filtros
+    // Filtros y cambio de vista
     if (els.filtersBar) {
         els.filtersBar.addEventListener('click', (e) => {
             const btn = e.target.closest('.filter-chip');
             if (!btn) return;
 
-            if (btn.dataset.category !== undefined) {
+            if (btn.dataset.view !== undefined) {
+                // Cambio de tipo de vista
+                const viewType = btn.dataset.view;
+                setViewType(viewType);
+            } else if (btn.dataset.category !== undefined) {
                 const cat = btn.dataset.category || null;
                 setFilterCategory(cat);
             } else if (btn.dataset.nutriscore !== undefined) {
@@ -350,6 +488,17 @@ function setupEventListeners(onStartDemo) {
         if ((e.key === 'c' || e.key === 'C') && !e.ctrlKey && !e.metaKey) {
             if (state.currentMode === MODES.BROWSE) {
                 setMode(MODES.CART);
+            }
+        }
+
+        // Navegación del carrito con flechas
+        if (state.currentMode === MODES.CART && currentCart.length > 0) {
+            if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                cartPrev();
+            } else if (e.key === 'ArrowRight') {
+                e.preventDefault();
+                cartNext();
             }
         }
     });

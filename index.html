@@ -477,6 +477,19 @@
             border-color: #ef4444;
         }
 
+        /* View toggle chips */
+        .filter-chip.view-chip {
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .filter-chip.view-chip svg {
+            width: 18px;
+            height: 18px;
+        }
+
         /* ========== VIEWS ========== */
         .view {
             display: none;
@@ -507,18 +520,21 @@
             color: #93c5fd;
         }
 
-        /* Cart View */
+        /* Cart View - Horizontal Coverflow */
         #view-cart {
-            padding: 100px 40px 40px;
-            max-width: 600px;
-            margin: 0 auto;
+            padding: 100px 300px 40px 180px;
+            height: 100vh;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
         }
 
         .cart-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
+            flex-shrink: 0;
         }
 
         .cart-title {
@@ -527,43 +543,178 @@
             color: white;
         }
 
-        .cart-item {
+        /* Cart Coverflow */
+        .cart-coverflow-stage {
+            flex: 1;
             display: flex;
+            flex-direction: column;
             align-items: center;
-            gap: 16px;
-            padding: 16px;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 16px;
-            margin-bottom: 12px;
+            justify-content: center;
+            perspective: 1200px;
+            position: relative;
         }
 
-        .cart-item-image {
-            width: 60px;
-            height: 60px;
-            border-radius: 12px;
+        .cart-coverflow-track {
+            position: relative;
+            width: 100%;
+            max-width: 900px;
+            height: 320px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transform-style: preserve-3d;
+        }
+
+        .cart-coverflow-card {
+            position: absolute;
+            width: 240px;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            cursor: pointer;
+            transform-style: preserve-3d;
+        }
+
+        /* Animación snap elástico para carrito */
+        .cart-coverflow-track.slide-left .cart-coverflow-card {
+            animation: cartSnapLeft 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .cart-coverflow-track.slide-right .cart-coverflow-card {
+            animation: cartSnapRight 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes cartSnapLeft {
+            0% {
+                opacity: 0.6;
+                transform: perspective(1000px) translateX(100px) scale(0.9);
+            }
+            70% {
+                opacity: 1;
+                transform: perspective(1000px) translateX(-6px) scale(1.01);
+            }
+            100% {
+                transform: perspective(1000px) translateX(0) scale(1);
+            }
+        }
+
+        @keyframes cartSnapRight {
+            0% {
+                opacity: 0.6;
+                transform: perspective(1000px) translateX(-100px) scale(0.9);
+            }
+            70% {
+                opacity: 1;
+                transform: perspective(1000px) translateX(6px) scale(1.01);
+            }
+            100% {
+                transform: perspective(1000px) translateX(0) scale(1);
+            }
+        }
+
+        .cart-coverflow-active {
+            animation: cartPopIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes cartPopIn {
+            0% {
+                opacity: 0.7;
+                transform: perspective(1000px) translateX(0) translateZ(-30px) scale(0.93) rotateY(0deg);
+            }
+            60% {
+                transform: perspective(1000px) translateX(0) translateZ(8px) scale(1.02) rotateY(0deg);
+            }
+            100% {
+                opacity: 1;
+                transform: perspective(1000px) translateX(0) translateZ(0) scale(1) rotateY(0deg);
+            }
+        }
+
+        .cart-coverflow-card-inner {
+            position: relative;
+            background: linear-gradient(145deg, #2a2a4a, #1e1e3a);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.5),
+                0 0 0 1px rgba(255, 255, 255, 0.1);
+        }
+
+        .cart-coverflow-active .cart-coverflow-card-inner {
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6),
+                0 0 0 2px rgba(59, 130, 246, 0.4);
+        }
+
+        .cart-coverflow-card-image {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 1;
+            overflow: hidden;
+        }
+
+        .cart-coverflow-card-image img {
+            width: 100%;
+            height: 100%;
             object-fit: cover;
         }
 
-        .cart-item-info {
-            flex: 1;
-        }
-
-        .cart-item-name {
-            font-weight: 500;
+        .cart-coverflow-qty {
+            position: absolute;
+            bottom: 12px;
+            right: 12px;
+            min-width: 36px;
+            height: 36px;
+            padding: 0 12px;
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.1rem;
             color: white;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
         }
 
-        .cart-item-brand {
-            font-size: 0.85rem;
+        .cart-nav-indicator {
+            margin-top: 24px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
             color: #9ca3af;
+            font-size: 0.9rem;
         }
 
-        .cart-item-qty {
-            padding: 6px 12px;
-            background: #3b82f6;
-            border-radius: 8px;
-            font-weight: 600;
+        .cart-nav-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .cart-nav-btn:hover:not(:disabled) {
+            background: rgba(59, 130, 246, 0.3);
+            border-color: #3b82f6;
+        }
+
+        .cart-nav-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .cart-empty {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6b7280;
+        }
+
+        .cart-empty-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
         }
 
         /* Video Debug View */
@@ -809,15 +960,15 @@
 
         /* ========== PRODUCT GRID STYLES ========== */
         .product-grid-container {
-            padding: 100px 40px 40px 180px;
+            padding: 100px 300px 40px 180px;
             min-height: 100vh;
         }
 
         .product-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(3, 1fr);
             gap: 24px;
-            max-width: 1400px;
+            max-width: 1200px;
             margin: 0 auto;
         }
 
@@ -992,7 +1143,8 @@
             align-items: center;
             justify-content: center;
             perspective: 1200px;
-            padding: 0 40px;
+            padding: 0 300px 0 180px;
+            box-sizing: border-box;
         }
 
         .hcoverflow-track {
@@ -1009,9 +1161,65 @@
         .hcoverflow-card {
             position: absolute;
             width: 320px;
-            transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             cursor: pointer;
             transform-style: preserve-3d;
+        }
+
+        /* Animación snap elástico para gestos */
+        .hcoverflow-track.slide-left .hcoverflow-card {
+            animation: snapLeft 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .hcoverflow-track.slide-right .hcoverflow-card {
+            animation: snapRight 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes snapLeft {
+            0% {
+                opacity: 0.6;
+                transform: perspective(1000px) translateX(120px) scale(0.9);
+            }
+            70% {
+                opacity: 1;
+                transform: perspective(1000px) translateX(-8px) scale(1.01);
+            }
+            100% {
+                transform: perspective(1000px) translateX(0) scale(1);
+            }
+        }
+
+        @keyframes snapRight {
+            0% {
+                opacity: 0.6;
+                transform: perspective(1000px) translateX(-120px) scale(0.9);
+            }
+            70% {
+                opacity: 1;
+                transform: perspective(1000px) translateX(8px) scale(1.01);
+            }
+            100% {
+                transform: perspective(1000px) translateX(0) scale(1);
+            }
+        }
+
+        /* Efecto pop en tarjeta activa */
+        .hcoverflow-active {
+            animation: popIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes popIn {
+            0% {
+                opacity: 0.7;
+                transform: perspective(1000px) translateX(0) translateZ(-40px) scale(0.92) rotateY(0deg);
+            }
+            60% {
+                transform: perspective(1000px) translateX(0) translateZ(10px) scale(1.03) rotateY(0deg);
+            }
+            100% {
+                opacity: 1;
+                transform: perspective(1000px) translateX(0) translateZ(0) scale(1) rotateY(0deg);
+            }
         }
 
         .hcoverflow-card-inner {
@@ -1216,6 +1424,12 @@
 
             .product-grid-container {
                 padding-left: 40px;
+                padding-right: 40px;
+            }
+
+            .hcoverflow-stage {
+                padding-left: 40px;
+                padding-right: 40px;
             }
 
             .hcoverflow-card {
@@ -1224,6 +1438,15 @@
 
             .hcoverflow-track {
                 height: 380px;
+            }
+
+            #view-cart {
+                padding-left: 40px;
+                padding-right: 40px;
+            }
+
+            .cart-coverflow-card {
+                width: 180px;
             }
         }
 
@@ -1303,6 +1526,24 @@
             <button class="filter-chip nutri-C" data-nutriscore="C">C</button>
             <button class="filter-chip nutri-D" data-nutriscore="D">D</button>
             <button class="filter-chip nutri-E" data-nutriscore="E">E</button>
+        </div>
+        <div class="filter-group" style="margin-top: 20px;">
+            <span class="filter-label">Vista</span>
+            <button class="filter-chip view-chip active" data-view="coverflow" title="Vista Coverflow Horizontal">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <rect x="2" y="6" width="6" height="12" rx="1" opacity="0.4"/>
+                    <rect x="9" y="4" width="6" height="16" rx="1"/>
+                    <rect x="16" y="6" width="6" height="12" rx="1" opacity="0.4"/>
+                </svg>
+            </button>
+            <button class="filter-chip view-chip" data-view="grid" title="Vista Grid 3x3">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <rect x="3" y="3" width="7" height="7" rx="1"/>
+                    <rect x="14" y="3" width="7" height="7" rx="1"/>
+                    <rect x="3" y="14" width="7" height="7" rx="1"/>
+                    <rect x="14" y="14" width="7" height="7" rx="1"/>
+                </svg>
+            </button>
         </div>
     </aside>
 

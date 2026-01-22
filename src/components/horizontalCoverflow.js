@@ -124,8 +124,9 @@ function renderEmpty() {
 
 /**
  * Renderiza el coverflow completo
+ * @param {string} direction - Dirección de la animación: 'left', 'right', o null
  */
-function render() {
+function render(direction = null) {
     if (!state.container) return;
 
     const { products, activeIndex } = state;
@@ -139,10 +140,11 @@ function render() {
     }
 
     const activeProduct = products[activeIndex];
+    const slideClass = direction ? `slide-${direction}` : '';
 
     state.container.innerHTML = `
         <div class="hcoverflow-stage">
-            <div class="hcoverflow-track">
+            <div class="hcoverflow-track ${slideClass}">
                 ${renderCard(getProductAtOffset(-1), 'prev')}
                 ${renderCard(getProductAtOffset(0), 'active')}
                 ${renderCard(getProductAtOffset(1), 'next')}
@@ -201,7 +203,7 @@ function render() {
     });
 }
 
-// Navegación
+// Navegación con animación
 export function prev() {
     console.log('[Coverflow] prev() llamado, activeIndex:', state.activeIndex, 'products:', state.products.length);
     if (!state.container || state.products.length === 0) {
@@ -211,7 +213,7 @@ export function prev() {
     if (state.activeIndex > 0) {
         console.log('[Coverflow] Retrocediendo al producto anterior');
         state.activeIndex--;
-        render();
+        render('right');
         return true;
     }
     return false;
@@ -226,7 +228,7 @@ export function next() {
     if (state.activeIndex < state.products.length - 1) {
         console.log('[Coverflow] Avanzando al siguiente producto');
         state.activeIndex++;
-        render();
+        render('left');
         return true;
     }
     return false;

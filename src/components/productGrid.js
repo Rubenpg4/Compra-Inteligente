@@ -12,7 +12,7 @@ import {
 
 // Configuración del grid
 const ROWS = 3;
-const COLS = 4;
+const COLS = 3;
 const ITEMS_PER_PAGE = ROWS * COLS;
 
 // Imágenes por categoría
