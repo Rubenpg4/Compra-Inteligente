@@ -164,16 +164,8 @@ function render(direction = null) {
                 <button class="hcoverflow-nav-btn hcoverflow-nav-next" ${activeIndex >= products.length - 1 ? 'disabled' : ''}>
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M9 18l6-6-6-6"/>
-                    </svg>
                 </button>
             </div>
-
-            <button id="hcoverflow-back-btn" class="hcoverflow-back-btn">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M19 12H5M12 19l-7-7 7-7"/>
-                </svg>
-                Ver todos los productos
-            </button>
         </div>
     `;
 
@@ -195,11 +187,6 @@ function render(direction = null) {
     state.container.querySelector('.hcoverflow-add-btn')?.addEventListener('click', (e) => {
         e.stopPropagation();
         addActiveToCart();
-    });
-
-    // Botón volver (limpiar filtros)
-    state.container.querySelector('#hcoverflow-back-btn')?.addEventListener('click', () => {
-        clearFilters();
     });
 }
 
@@ -245,29 +232,36 @@ export function selectActive() {
  * Retorna el producto actualmente en foco (para uso externo)
  */
 export function getActiveProduct() {
-    return getProductAtOffset(0);
+    console.log('[DEBUG getActiveProduct] state.products.length:', state.products.length, 'activeIndex:', state.activeIndex);
+    const product = getProductAtOffset(0);
+    console.log('[DEBUG getActiveProduct] product:', product);
+    return product;
+}
+
+export function triggerAddAnimation(duration = 1000) {
+    const btn = state.container?.querySelector('.hcoverflow-add-btn');
+    if (btn) {
+        btn.classList.add('added');
+        btn.innerHTML = '<span>Añadido ✓</span>';
+        setTimeout(() => {
+            btn.classList.remove('added');
+            btn.innerHTML = `
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M6 6h15l-1.5 9h-12z"></path>
+                    <circle cx="9" cy="20" r="1"></circle>
+                    <circle cx="18" cy="20" r="1"></circle>
+                </svg>
+                Añadir al carrito
+            `;
+        }, duration);
+    }
 }
 
 export function addActiveToCart() {
     const product = getProductAtOffset(0);
     if (product) {
         addToCart(product);
-        const btn = state.container?.querySelector('.hcoverflow-add-btn');
-        if (btn) {
-            btn.classList.add('added');
-            btn.innerHTML = '<span>Añadido ✓</span>';
-            setTimeout(() => {
-                btn.classList.remove('added');
-                btn.innerHTML = `
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M6 6h15l-1.5 9h-12z"></path>
-                        <circle cx="9" cy="20" r="1"></circle>
-                        <circle cx="18" cy="20" r="1"></circle>
-                    </svg>
-                    Añadir al carrito
-                `;
-            }, 1500);
-        }
+        triggerAddAnimation();
     }
 }
 
@@ -275,8 +269,6 @@ export function addActiveToCart() {
 function handleKeydown(e) {
     const currentState = getState();
     if (currentState.currentMode !== MODES.BROWSE) return;
-    // Solo activo cuando hay filtros
-    if (!currentState.filters?.category && !currentState.filters?.nutriscore) return;
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
 
     switch (e.key) {
@@ -305,7 +297,6 @@ function handleKeydown(e) {
 function handleWheel(e) {
     const currentState = getState();
     if (currentState.currentMode !== MODES.BROWSE) return;
-    if (!currentState.filters?.category && !currentState.filters?.nutriscore) return;
 
     e.preventDefault();
     if (e.deltaY > 0 || e.deltaX > 0) {
@@ -330,7 +321,7 @@ export function updateHorizontalCoverflow(products) {
 
         if (foundIndex !== -1) {
             // El producto sigue existiendo, mantenemos foco en el
-            console.log(`[Coverflow] Manteniendo foco en producto ${currentProduct.name} (idx ${foundIndex})`);
+            // console.log(`[Coverflow] Manteniendo foco en producto ${currentProduct.name} (idx ${foundIndex})`);
             newIndex = foundIndex;
         } else {
             console.log('[Coverflow] Producto activo ya no existe, reset a 0');

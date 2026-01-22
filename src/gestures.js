@@ -12,9 +12,12 @@ import {
     addToCart,
     decreaseCartItem,
     addLog,
-    MODES
+    MODES,
+    setCartActiveIndex
 } from './store.js';
 
+import { next as coverflowNext, prev as coverflowPrev, getActiveProduct, triggerAddAnimation } from './components/horizontalCoverflow.js';
+import { triggerDetailAddAnimation, showFeedback, handleCheckoutSuccess, isGridViewActive } from './ui.js';
 import { FilesetResolver, GestureRecognizer } from 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.8/+esm';
 
 // ============================================================================
@@ -75,7 +78,6 @@ const LANDMARKS = {
 let gestureRecognizer = null;
 let videoElement = null;
 let cursorElement = null;
-let feedbackElement = null; // Elemento para texto de feedback
 let isRunning = false;
 let animationFrameId = null;
 
@@ -172,28 +174,7 @@ function updateHoverHighlight(element) {
     hoveredElement = element;
 }
 
-/**
- * Muestra un mensaje de feedback visual
- */
-function showFeedback(text, type = 'info') {
-    if (!feedbackElement) return;
 
-    feedbackElement.textContent = text;
-    feedbackElement.className = 'visible'; // Reset class
-
-    // Añadir color segun el tipo
-    if (type === 'success') feedbackElement.style.color = '#22c55e';
-    else if (type === 'warning') feedbackElement.style.color = '#eab308';
-    else if (type === 'error') feedbackElement.style.color = '#ef4444';
-    else feedbackElement.style.color = 'white';
-
-    // Ocultar despues de un tiempo
-    setTimeout(() => {
-        if (feedbackElement.textContent === text) {
-            feedbackElement.classList.remove('visible');
-        }
-    }, 1500);
-}
 
 /**
  * Actualiza el highlight de la leyenda de gestos con progreso visual
@@ -447,11 +428,6 @@ function detectSwipe(landmarks) {
         threshold = CONFIG.SWIPE_BASE_THRESHOLD;
     }
 
-    // Debug
-    if (Math.abs(deltaX) > 0.05 && CONFIG.DEBUG) {
-        console.log(`dX: ${deltaX.toFixed(3)}, Threshold: ${threshold} (${lastSwipeDirection ? 'REVERSE' : 'normal'})`);
-    }
-
     // 4. Trigger: Superar umbral
     if (Math.abs(deltaX) > threshold) {
 
@@ -500,17 +476,43 @@ function executeConfirmAction(element, cursorPos) {
     }
 
     const state = getState();
-    const hasFilters = state.filters && (state.filters.category || state.filters.nutriscore);
-
-    // Si estamos en modo BROWSE con filtros (Coverflow activo) -> Añadir producto en foco
-    if (state.currentMode === MODES.BROWSE && hasFilters) {
+    // Si estamos en modo BROWSE (Coverflow por defecto) -> Añadir producto en foco
+    if (state.currentMode === MODES.BROWSE) {
+        console.log('[DEBUG Confirm] currentMode:', state.currentMode, 'MODES.BROWSE:', MODES.BROWSE, 'Match:', state.currentMode === MODES.BROWSE);
         const focusedProduct = getActiveProduct();
         if (focusedProduct) {
             addToCart(focusedProduct);
             showFeedback(`+1 ${focusedProduct.name}`, 'success');
             addLog('cart', `CARRITO: +1 ${focusedProduct.name}`);
+            setTimeout(() => triggerAddAnimation(1000), 50); // Small delay to ensure render completes
         } else {
             showFeedback('No hay producto en foco', 'warning');
+        }
+        return;
+    }
+
+    // Si estamos en modo CART -> +1 al item activo
+    if (state.currentMode === MODES.CART) {
+        if (state.cart.length > 0) {
+            const currentItem = state.cart[state.cartActiveIndex];
+            if (currentItem) {
+                addToCart(currentItem); // Add +1
+                showFeedback(`+1 ${currentItem.name}`, 'success');
+                addLog('cart', `CARRITO: +1 ${currentItem.name}`);
+            }
+        } else {
+            showFeedback('Carrito Vacío', 'warning');
+        }
+        return;
+    }
+
+    // Si estamos en modo DETAILS -> Añadir producto seleccionado
+    if (state.currentMode === MODES.DETAILS) {
+        if (state.selectedProduct) {
+            addToCart(state.selectedProduct);
+            showFeedback(`+1 ${state.selectedProduct.name}`, 'success');
+            addLog('cart', `CARRITO: +1 ${state.selectedProduct.name}`);
+            setTimeout(() => triggerDetailAddAnimation(1000), 50);
         }
         return;
     }
@@ -539,6 +541,7 @@ function executeConfirmAction(element, cursorPos) {
             addToCart(product);
         } else if (state.currentMode === MODES.DETAILS && state.selectedProduct) {
             addToCart(state.selectedProduct);
+            triggerDetailAddAnimation(1000);
         }
         return;
     }
@@ -567,6 +570,21 @@ function executeRemoveAction(element, cursorPos) {
     }
 
     const state = getState();
+
+    // Si estamos en modo CART -> -1 al item activo (o eliminar)
+    if (state.currentMode === MODES.CART) {
+        if (state.cart.length > 0) {
+            const currentItem = state.cart[state.cartActiveIndex];
+            if (currentItem) {
+                decreaseCartItem(currentItem); // -1 or remove
+                showFeedback(`-1 ${currentItem.name}`, 'warning');
+                addLog('cart', `CARRITO: -1 ${currentItem.name}`);
+            }
+        } else {
+            showFeedback('Carrito Vacío', 'warning');
+        }
+        return;
+    }
 
     // Si apuntamos a un elemento valido (producto)
     if (element) {
@@ -619,8 +637,19 @@ function executeStopAction() {
         showFeedback('VOLVER A TIENDA', 'error');
     }
     else if (state.currentMode === MODES.DETAILS) {
-        setMode(MODES.BROWSE);
-        showFeedback('VOLVER A TIENDA', 'error');
+        // Smart Back: Si venimos del carrito, volver al carrito
+        if (state.previousMode === MODES.CART) {
+            setMode(MODES.CART);
+            showFeedback('VOLVER AL CARRITO', 'warning');
+        } else {
+            setMode(MODES.BROWSE);
+            showFeedback('VOLVER A TIENDA', 'error');
+        }
+    }
+    // Cancelar Checkout -> Volver al Carrito
+    else if (state.currentMode === MODES.CHECKOUT) {
+        setMode(MODES.CART);
+        showFeedback('CANCELADO', 'error');
     }
     else {
         showFeedback('STOP / ATRAS', 'error');
@@ -652,43 +681,22 @@ function executeVictoryAction() {
         return;
     }
 
-    // 2. Cart -> Finalizar Compra
+    // 2. Cart -> Confirmar (Ir a Modal)
     if (state.currentMode === MODES.CART) {
-        // Verificar si hay items
         if (state.cart.length === 0) {
             showFeedback('CARRITO VACIO', 'warning');
             return;
         }
+        setMode(MODES.CHECKOUT);
+        showFeedback('¿CONFIRMAR?', 'info');
+        return;
+    }
 
-        // A) Primera vez: Pedir confirmacion
-        if (!purchaseConfirmationPending) {
-            purchaseConfirmationPending = true;
-            showFeedback('¿CONFIRMAR? REPITE GESTO', 'warning');
-
-            // Timeout de 5s para confirmar
-            if (purchaseConfirmationTimer) clearTimeout(purchaseConfirmationTimer);
-            purchaseConfirmationTimer = setTimeout(() => {
-                purchaseConfirmationPending = false;
-                showFeedback('Confirmación expirada', 'info');
-            }, 5000);
-        }
-        // B) Segunda vez: COMPRA REALIZADA
-        else {
-            purchaseConfirmationPending = false;
-            if (purchaseConfirmationTimer) clearTimeout(purchaseConfirmationTimer);
-
-            // Realizar compra (Simulada: Limpiar carrito y volver)
-            showFeedback('¡COMPRA REALIZADA! 🥳', 'success');
-            addLog('system', 'COMPRA FINALIZADA CON EXITO');
-
-            // Vaciar carrito
-            setState({ cart: [] });
-
-            // Volver a inicio tras un breve delay visual
-            setTimeout(() => {
-                setMode(MODES.BROWSE);
-            }, 2000);
-        }
+    // 3. Checkout Modal -> Confirmar FINAL
+    if (state.currentMode === MODES.CHECKOUT) {
+        addLog('system', 'COMPRA FINALIZADA CON EXITO');
+        handleCheckoutSuccess();
+        return;
     }
 }
 
@@ -704,18 +712,48 @@ function executeItalianAction(element) {
     addLog('gesture', 'GESTURE: Italiano (x2)');
 
     const state = getState();
-    const hasFilters = state.filters && (state.filters.category || state.filters.nutriscore);
-
-    // Si estamos en modo BROWSE con filtros (Coverflow activo) -> Añadir producto en foco x2
-    if (state.currentMode === MODES.BROWSE && hasFilters) {
+    // Si estamos en modo BROWSE (Coverflow por defecto) -> Añadir producto en foco x2
+    if (state.currentMode === MODES.BROWSE) {
+        console.log('[DEBUG Italian] currentMode:', state.currentMode, 'MODES.BROWSE:', MODES.BROWSE, 'Match:', state.currentMode === MODES.BROWSE);
         const focusedProduct = getActiveProduct();
         if (focusedProduct) {
             addToCart(focusedProduct);
             addToCart(focusedProduct);
             showFeedback(`+2 ${focusedProduct.name} 🤌`, 'success');
             addLog('cart', `CARRITO: +2 ${focusedProduct.name}`);
+            setTimeout(() => triggerAddAnimation(1000), 50); // Small delay to ensure render completes
         } else {
             showFeedback('No hay producto en foco', 'warning');
+        }
+        return;
+    }
+
+
+
+    // Si estamos en modo CART -> +2 al item activo
+    if (state.currentMode === MODES.CART) {
+        if (state.cart.length > 0) {
+            const currentItem = state.cart[state.cartActiveIndex];
+            if (currentItem) {
+                addToCart(currentItem);
+                addToCart(currentItem);
+                showFeedback(`+2 ${currentItem.name} 🤌`, 'success');
+                addLog('cart', `CARRITO: +2 ${currentItem.name}`);
+            }
+        } else {
+            showFeedback('Carrito Vacío', 'warning');
+        }
+        return;
+    }
+
+    // Si estamos en modo DETAILS -> Añadir producto seleccionado x2
+    if (state.currentMode === MODES.DETAILS) {
+        if (state.selectedProduct) {
+            addToCart(state.selectedProduct);
+            addToCart(state.selectedProduct);
+            showFeedback(`+2 ${state.selectedProduct.name} 🤌`, 'success');
+            addLog('cart', `CARRITO: +2 ${state.selectedProduct.name}`);
+            setTimeout(() => triggerDetailAddAnimation(1000), 50);
         }
         return;
     }
@@ -739,10 +777,9 @@ function executeClosedFistAction() {
     addLog('gesture', 'GESTURE: Closed Fist (Detalles)');
 
     const state = getState();
-    const hasFilters = state.filters && (state.filters.category || state.filters.nutriscore);
-
-    // Si estamos en modo BROWSE con filtros (Coverflow activo) -> Ver detalles del producto en foco
-    if (state.currentMode === MODES.BROWSE && hasFilters) {
+    console.log('[DEBUG Fist] currentMode:', state.currentMode, 'MODES.BROWSE:', MODES.BROWSE, 'Match:', state.currentMode === MODES.BROWSE);
+    // Si estamos en modo BROWSE (Coverflow por defecto) -> Ver detalles del producto en foco
+    if (state.currentMode === MODES.BROWSE) {
         const focusedProduct = getActiveProduct();
         if (focusedProduct) {
             setMode(MODES.DETAILS, { product: focusedProduct });
@@ -753,12 +790,24 @@ function executeClosedFistAction() {
         return;
     }
 
+    // Si estamos en modo CART -> Ver detalles del item activo
+    if (state.currentMode === MODES.CART) {
+        if (state.cart.length > 0) {
+            const currentItem = state.cart[state.cartActiveIndex];
+            if (currentItem) {
+                setMode(MODES.DETAILS, { product: currentItem });
+                showFeedback(`Detalles: ${currentItem.name}`, 'info');
+            }
+        } else {
+            showFeedback('Carrito Vacío', 'warning');
+        }
+        return;
+    }
+
     // Feedback genérico si no estamos en coverflow
     showFeedback('PUÑO CERRADO', 'info');
     if (cursorElement) cursorElement.classList.add('holding');
 }
-
-import { next as coverflowNext, prev as coverflowPrev, getActiveProduct } from './components/horizontalCoverflow.js';
 
 /**
  * Ejecuta accion para Swipe
@@ -769,10 +818,8 @@ function executeSwipeAction(direction) {
     lastSwipeTime = now;
 
     const state = getState();
-    const hasFilters = state.filters && (state.filters.category || state.filters.nutriscore);
-
-    // 1. Si estamos en BROWSE y hay filtros -> Navegación Coverflow
-    if (state.currentMode === MODES.BROWSE && hasFilters) {
+    // 1. Si estamos en BROWSE -> Navegación Coverflow
+    if (state.currentMode === MODES.BROWSE) {
         let success = false;
         // Swipe Left (Mano va a la izq) -> Queremos ver lo de la derecha -> Next
         if (direction === 'left') {
@@ -794,8 +841,23 @@ function executeSwipeAction(direction) {
         return;
     }
 
+    // 2. Si estamos en CART -> Navegación Coverflow del Carrito
+    if (state.currentMode === MODES.CART && state.cart.length > 0) {
+        if (direction === 'left') {
+            // Swipe Left -> Next (igual que coverflow)
+            setCartActiveIndex(state.cartActiveIndex + 1);
+            showFeedback('SIGUIENTE', 'success');
+        } else if (direction === 'right') {
+            // Swipe Right -> Prev
+            setCartActiveIndex(state.cartActiveIndex - 1);
+            showFeedback('ANTERIOR', 'success');
+        }
+        addLog('gesture', `GESTURE: Swipe ${direction} (Cart)`);
+        return;
+    }
+
     addLog('gesture', `GESTURE: Swipe ${direction}`);
-    // 2. Otros casos (por ejemplo paginacion en grid si hubiese)
+    // 3. Otros casos
     showFeedback(`SWIPE ${direction.toUpperCase()}`, 'success');
 }
 
@@ -824,6 +886,8 @@ async function processFrame() {
         return;
     }
 
+
+
     if (videoElement.readyState < 2) {
         animationFrameId = requestAnimationFrame(processFrame);
         return;
@@ -833,9 +897,24 @@ async function processFrame() {
         const startTimeMs = performance.now();
         // Usamos recognizeForVideo con GestureRecognizer
         const results = gestureRecognizer.recognizeForVideo(videoElement, startTimeMs);
-
         // 1. Manejo del Cursor (igual que antes)
         if (results.landmarks && results.landmarks.length > 0) {
+            // Check si estamos en Grid View -> Desactivar TODO (cursor y gestos)
+            if (isGridViewActive()) {
+                // Asegurar limpieza
+                if (cursorElement) {
+                    cursorElement.classList.remove('active', 'pinch', 'palm', 'stop', 'confirm', 'holding');
+                }
+                updateHoverHighlight(null);
+                updateLegendHighlight(null);
+                pendingGesture = null;
+                lastSwipeDirection = null;
+
+                // IMPORTANTE: Mantener el loop vivo aunque no procesemos
+                animationFrameId = requestAnimationFrame(processFrame);
+                return; // Salir del procesamiento de landmarks
+            }
+
             const landmarks = results.landmarks[0];
 
             // Obtener posicion del indice para el cursor
@@ -910,7 +989,6 @@ async function processFrame() {
                         // GESTO CONFIRMADO TRAS 2s - Mostrar éxito
                         showGestureSuccess(currentFrameGesture);
                         gestureJustSucceeded = true; // Marcar que acaba de tener éxito
-
                         switch (currentFrameGesture) {
                             case 'Italian':
                                 executeItalianAction(elementUnderCursor);
@@ -1029,7 +1107,7 @@ export async function init(videoEl, overlayEl, cbs = {}) {
 
     videoElement = videoEl || document.getElementById('gesture-video');
     cursorElement = overlayEl || document.getElementById('gesture-cursor');
-    feedbackElement = document.getElementById('gesture-feedback');
+
     callbacks = { ...callbacks, ...cbs };
 
     if (!videoElement) {
@@ -1076,31 +1154,41 @@ export async function init(videoEl, overlayEl, cbs = {}) {
         console.log('[Gestures] FilesetResolver creado.');
 
         console.log('[Gestures] Creando GestureRecognizer...');
+        console.log('[Gestures] Model URL:', CONFIG.MODEL_URL);
 
-        // Timeout para evitar hang indefinido
-        const createGestureRecognizer = GestureRecognizer.createFromOptions(vision, {
-            baseOptions: {
-                modelAssetPath: CONFIG.MODEL_URL,
-                delegate: 'GPU'
-            },
-            runningMode: 'VIDEO',
-            numHands: CONFIG.NUM_HANDS,
-            minHandDetectionConfidence: CONFIG.MIN_DETECTION_CONFIDENCE,
-            minTrackingConfidence: CONFIG.MIN_TRACKING_CONFIDENCE,
-            minHandPresenceConfidence: CONFIG.MIN_HAND_PRESENCE_CONFIDENCE
-        });
+        try {
+            // Timeout para evitar hang indefinido
+            console.log('[Gestures] Iniciando createFromOptions...');
+            const createGestureRecognizer = GestureRecognizer.createFromOptions(vision, {
+                baseOptions: {
+                    modelAssetPath: CONFIG.MODEL_URL,
+                    delegate: 'GPU'
+                },
+                runningMode: 'VIDEO',
+                numHands: CONFIG.NUM_HANDS,
+                minHandDetectionConfidence: CONFIG.MIN_DETECTION_CONFIDENCE,
+                minTrackingConfidence: CONFIG.MIN_TRACKING_CONFIDENCE,
+                minHandPresenceConfidence: CONFIG.MIN_HAND_PRESENCE_CONFIDENCE
+            });
 
-        const timeoutPromise = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('Timeout cargando modelo')), 15000)
-        );
+            console.log('[Gestures] createFromOptions iniciado, esperando respuesta...');
 
-        gestureRecognizer = await Promise.race([createGestureRecognizer, timeoutPromise]);
+            const timeoutPromise = new Promise((_, reject) =>
+                setTimeout(() => reject(new Error('Timeout cargando modelo (15s)')), 15000)
+            );
 
-        console.log('[Gestures] GestureRecognizer creado EXITOSAMENTE.');
-        setServiceStatus('model', true);
-        addLog('system', 'Gestos: modelo OK');
+            gestureRecognizer = await Promise.race([createGestureRecognizer, timeoutPromise]);
 
-        return true;
+            console.log('[Gestures] GestureRecognizer creado EXITOSAMENTE.');
+            setServiceStatus('model', true);
+            addLog('system', 'Gestos: modelo OK');
+
+            return true;
+
+        } catch (modelError) {
+            console.error('[Gestures] ERROR creando GestureRecognizer:', modelError);
+            throw modelError; // Re-lanzar para que lo capture el catch externo
+        }
 
     } catch (error) {
         console.error('[Gestures] ERROR FATAL en init:', error);

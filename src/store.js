@@ -8,7 +8,8 @@
 export const MODES = {
     BROWSE: 'BROWSE',
     DETAILS: 'DETAILS',
-    CART: 'CART'
+    CART: 'CART',
+    CHECKOUT: 'CHECKOUT'
 };
 
 // Categorias disponibles
@@ -21,6 +22,7 @@ export const NUTRISCORES = ['A', 'B', 'C', 'D', 'E'];
 const initialState = {
     // Modo actual de la SPA
     currentMode: MODES.BROWSE,
+    previousMode: null,
 
     // Producto seleccionado para vista DETAILS
     selectedProduct: null,
@@ -32,10 +34,7 @@ const initialState = {
     cart: [],
 
     // Filtros activos
-    filters: {
-        category: null,    // null = todas, o 'snacks', 'drinks', etc.
-        nutriscore: null   // null = todos, o 'A', 'B', etc.
-    },
+    filters: 'todas',    // todas, o 'snacks', 'drinks', etc.
 
     // Estado de los servicios multimodales
     services: {
@@ -49,7 +48,10 @@ const initialState = {
     demoStarted: false,
 
     // Log de eventos multimodales
-    logs: []
+    logs: [],
+
+    // Indice del producto activo en el carrito (Coverflow)
+    cartActiveIndex: 0
 };
 
 // Estado actual (copia del inicial)
@@ -109,7 +111,10 @@ export function setMode(mode, payload = {}) {
         return;
     }
 
-    const updates = { currentMode: mode };
+    const updates = {
+        currentMode: mode,
+        previousMode: state.currentMode
+    };
 
     if (mode === MODES.DETAILS && payload.product) {
         updates.selectedProduct = payload.product;
@@ -159,7 +164,14 @@ export function addToCart(product) {
  */
 export function removeFromCart(productId) {
     const newCart = state.cart.filter(item => item.id !== productId);
-    setState({ cart: newCart });
+
+    // Auto-ajustar indice
+    let newIndex = state.cartActiveIndex;
+    if (newIndex >= newCart.length) {
+        newIndex = Math.max(0, newCart.length - 1);
+    }
+
+    setState({ cart: newCart, cartActiveIndex: newIndex });
     addLog('cart', 'Producto eliminado del carrito');
 }
 
@@ -179,12 +191,20 @@ export function decreaseCartItem(product) {
                 : item
         );
         addLog('cart', `Producto decrementado: ${product.name}`);
+        setState({ cart: newCart });
     } else {
         // Eliminar si llega a 0
         newCart = state.cart.filter(item => item.id !== product.id);
+
+        // Auto-ajustar indice
+        let newIndex = state.cartActiveIndex;
+        if (newIndex >= newCart.length) {
+            newIndex = Math.max(0, newCart.length - 1);
+        }
+
         addLog('cart', `Producto eliminado: ${product.name}`);
+        setState({ cart: newCart, cartActiveIndex: newIndex });
     }
-    setState({ cart: newCart });
 }
 
 /**
@@ -286,6 +306,19 @@ export function getFilteredProducts() {
     return filtered;
 }
 
+/**
+ * Establece el indice activo del carrito
+ * @param {number} index - Nuevo indice
+ */
+export function setCartActiveIndex(index) {
+    // Validar limites
+    if (index < 0) index = 0;
+    if (state.cart.length > 0 && index >= state.cart.length) index = state.cart.length - 1;
+
+    setState({ cartActiveIndex: index });
+}
+
+
 // TODO: Implementar persistencia en localStorage para offline-first
 // TODO: Implementar sincronizacion cuando haya conexion
 // TODO: Agregar middleware para logging avanzado
@@ -308,6 +341,7 @@ export default {
     setFilterNutriscore,
     clearFilters,
     getFilteredProducts,
+    setCartActiveIndex,
     MODES,
     CATEGORIES,
     NUTRISCORES
