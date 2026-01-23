@@ -586,69 +586,152 @@
         .cart-coverflow-card {
             position: absolute;
             width: 240px;
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            /* Transición suave estilo Swiper */
+            transition: all 0.5s cubic-bezier(0.25, 0.1, 0.25, 1);
             cursor: pointer;
             transform-style: preserve-3d;
         }
 
-        /* Animación snap elástico para carrito */
+        /* Sombras proyectadas laterales estilo Swiper */
+        .cart-slide-shadow {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+            pointer-events: none;
+            z-index: 10;
+            border-radius: 20px;
+            transition: opacity 0.5s ease;
+        }
+
+        .cart-slide-shadow-left {
+            left: 0;
+            background: linear-gradient(to left, rgba(0, 0, 0, 0.55) 0%, transparent 100%);
+        }
+
+        .cart-slide-shadow-right {
+            right: 0;
+            background: linear-gradient(to right, rgba(0, 0, 0, 0.55) 0%, transparent 100%);
+        }
+
+        /* Animación slide estilo Swiper para carrito */
         .cart-coverflow-track.slide-left .cart-coverflow-card {
-            animation: cartSnapLeft 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            animation: cartSwiperSlideLeft 0.5s cubic-bezier(0.25, 0.1, 0.25, 1);
         }
 
         .cart-coverflow-track.slide-right .cart-coverflow-card {
-            animation: cartSnapRight 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            animation: cartSwiperSlideRight 0.5s cubic-bezier(0.25, 0.1, 0.25, 1);
         }
 
-        @keyframes cartSnapLeft {
+        @keyframes cartSwiperSlideLeft {
             0% {
-                opacity: 0.6;
-                transform: perspective(1000px) translateX(100px) scale(0.9);
+                opacity: 0.5;
+                transform: perspective(1200px) translateX(60px) translateZ(-40px) scale(0.92) rotateY(-12deg);
             }
-
-            70% {
-                opacity: 1;
-                transform: perspective(1000px) translateX(-6px) scale(1.01);
-            }
-
             100% {
-                transform: perspective(1000px) translateX(0) scale(1);
+                opacity: 1;
+                transform: perspective(1200px) translateX(0) translateZ(50px) scale(1) rotateY(0deg);
             }
         }
 
-        @keyframes cartSnapRight {
+        @keyframes cartSwiperSlideRight {
             0% {
-                opacity: 0.6;
-                transform: perspective(1000px) translateX(-100px) scale(0.9);
+                opacity: 0.5;
+                transform: perspective(1200px) translateX(-60px) translateZ(-40px) scale(0.92) rotateY(12deg);
             }
-
-            70% {
-                opacity: 1;
-                transform: perspective(1000px) translateX(6px) scale(1.01);
-            }
-
             100% {
-                transform: perspective(1000px) translateX(0) scale(1);
+                opacity: 1;
+                transform: perspective(1200px) translateX(0) translateZ(50px) scale(1) rotateY(0deg);
             }
         }
 
+        /* Animación para tarjeta activa del carrito */
         .cart-coverflow-active {
-            animation: cartPopIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            animation: cartSwiperActiveIn 0.5s cubic-bezier(0.25, 0.1, 0.25, 1);
         }
 
-        @keyframes cartPopIn {
+        @keyframes cartSwiperActiveIn {
             0% {
                 opacity: 0.7;
-                transform: perspective(1000px) translateX(0) translateZ(-30px) scale(0.93) rotateY(0deg);
+                transform: perspective(1200px) translateX(0) translateZ(-20px) scale(0.9) rotateY(0deg);
             }
-
-            60% {
-                transform: perspective(1000px) translateX(0) translateZ(8px) scale(1.02) rotateY(0deg);
-            }
-
             100% {
                 opacity: 1;
-                transform: perspective(1000px) translateX(0) translateZ(0) scale(1) rotateY(0deg);
+                transform: perspective(1200px) translateX(0) translateZ(50px) scale(1) rotateY(0deg);
+            }
+        }
+
+        /* Animación para tarjetas laterales del carrito - aparición gradual */
+        .cart-coverflow-prev {
+            animation: cartSwiperPrevIn 0.7s cubic-bezier(0.4, 0, 0.2, 1) 0.15s both;
+        }
+
+        .cart-coverflow-next {
+            animation: cartSwiperNextIn 0.7s cubic-bezier(0.4, 0, 0.2, 1) 0.15s both;
+        }
+
+        @keyframes cartSwiperPrevIn {
+            0% {
+                opacity: 0;
+                transform: perspective(1200px) translateX(-260px) translateZ(-150px) scale(0.6) rotateY(50deg);
+            }
+            40% {
+                opacity: 0.3;
+            }
+            100% {
+                opacity: 0.7;
+                transform: perspective(1200px) translateX(-160px) translateZ(-80px) scale(0.78) rotateY(38deg);
+            }
+        }
+
+        @keyframes cartSwiperNextIn {
+            0% {
+                opacity: 0;
+                transform: perspective(1200px) translateX(260px) translateZ(-150px) scale(0.6) rotateY(-50deg);
+            }
+            40% {
+                opacity: 0.3;
+            }
+            100% {
+                opacity: 0.7;
+                transform: perspective(1200px) translateX(160px) translateZ(-80px) scale(0.78) rotateY(-38deg);
+            }
+        }
+
+        /* Animación para tarjetas far del carrito - más gradual aún */
+        .cart-coverflow-far-prev {
+            animation: cartSwiperFarPrevIn 0.8s cubic-bezier(0.4, 0, 0.2, 1) 0.25s both;
+        }
+
+        .cart-coverflow-far-next {
+            animation: cartSwiperFarNextIn 0.8s cubic-bezier(0.4, 0, 0.2, 1) 0.25s both;
+        }
+
+        @keyframes cartSwiperFarPrevIn {
+            0% {
+                opacity: 0;
+                transform: perspective(1200px) translateX(-350px) translateZ(-250px) scale(0.4) rotateY(60deg);
+            }
+            50% {
+                opacity: 0.1;
+            }
+            100% {
+                opacity: 0.25;
+                transform: perspective(1200px) translateX(-280px) translateZ(-180px) scale(0.5) rotateY(50deg);
+            }
+        }
+
+        @keyframes cartSwiperFarNextIn {
+            0% {
+                opacity: 0;
+                transform: perspective(1200px) translateX(350px) translateZ(-250px) scale(0.4) rotateY(-60deg);
+            }
+            50% {
+                opacity: 0.1;
+            }
+            100% {
+                opacity: 0.25;
+                transform: perspective(1200px) translateX(280px) translateZ(-180px) scale(0.5) rotateY(-50deg);
             }
         }
 
@@ -659,11 +742,13 @@
             overflow: hidden;
             box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.5),
                 0 0 0 1px rgba(255, 255, 255, 0.1);
+            transition: box-shadow 0.5s ease;
         }
 
         .cart-coverflow-active .cart-coverflow-card-inner {
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6),
-                0 0 0 2px rgba(59, 130, 246, 0.4);
+            box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.7),
+                0 0 0 2px rgba(59, 130, 246, 0.4),
+                0 0 35px rgba(59, 130, 246, 0.15);
         }
 
         .cart-coverflow-card-image {
@@ -677,6 +762,34 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
+            transition: transform 0.5s cubic-bezier(0.25, 0.1, 0.25, 1);
+        }
+
+        .cart-coverflow-active .cart-coverflow-card-image img:hover {
+            transform: scale(1.05);
+        }
+
+        /* Reflexión inferior estilo Apple coverflow */
+        .cart-coverflow-reflection {
+            position: absolute;
+            bottom: -50%;
+            left: 5%;
+            right: 5%;
+            height: 50%;
+            background: linear-gradient(to bottom,
+                rgba(255, 255, 255, 0.08) 0%,
+                transparent 50%);
+            transform: scaleY(-1) rotateX(180deg);
+            pointer-events: none;
+            opacity: 0.35;
+            filter: blur(2px);
+            border-radius: 20px;
+            mask-image: linear-gradient(to bottom, black 0%, transparent 60%);
+            -webkit-mask-image: linear-gradient(to bottom, black 0%, transparent 60%);
+        }
+
+        .cart-coverflow-active .cart-coverflow-reflection {
+            opacity: 0.45;
         }
 
         .cart-coverflow-qty {
@@ -1177,8 +1290,8 @@
         .hcoverflow-track {
             position: relative;
             width: 100%;
-            max-width: 1000px;
-            height: 450px;
+            max-width: 900px;
+            height: 380px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -1187,71 +1300,116 @@
 
         .hcoverflow-card {
             position: absolute;
-            width: 320px;
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            width: 260px;
+            /* Transición suave estilo Swiper - easing más fluido */
+            transition: all 0.5s cubic-bezier(0.25, 0.1, 0.25, 1);
             cursor: pointer;
             transform-style: preserve-3d;
         }
 
-        /* Animación snap elástico para gestos */
+        /* Sombras proyectadas laterales estilo Swiper */
+        .hcoverflow-slide-shadow {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+            pointer-events: none;
+            z-index: 10;
+            border-radius: 24px;
+            transition: opacity 0.5s ease;
+        }
+
+        .hcoverflow-slide-shadow-left {
+            left: 0;
+            background: linear-gradient(to left, rgba(0, 0, 0, 0.6) 0%, transparent 100%);
+        }
+
+        .hcoverflow-slide-shadow-right {
+            right: 0;
+            background: linear-gradient(to right, rgba(0, 0, 0, 0.6) 0%, transparent 100%);
+        }
+
+        /* Animación slide estilo Swiper - más fluida */
         .hcoverflow-track.slide-left .hcoverflow-card {
-            animation: snapLeft 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            animation: swiperSlideLeft 0.5s cubic-bezier(0.25, 0.1, 0.25, 1);
         }
 
         .hcoverflow-track.slide-right .hcoverflow-card {
-            animation: snapRight 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            animation: swiperSlideRight 0.5s cubic-bezier(0.25, 0.1, 0.25, 1);
         }
 
-        @keyframes snapLeft {
+        @keyframes swiperSlideLeft {
             0% {
-                opacity: 0.6;
-                transform: perspective(1000px) translateX(120px) scale(0.9);
+                opacity: 0.5;
+                transform: perspective(1200px) translateX(80px) translateZ(-50px) scale(0.92) rotateY(-15deg);
             }
-
-            70% {
-                opacity: 1;
-                transform: perspective(1000px) translateX(-8px) scale(1.01);
-            }
-
             100% {
-                transform: perspective(1000px) translateX(0) scale(1);
+                opacity: 1;
+                transform: perspective(1200px) translateX(0) translateZ(60px) scale(1) rotateY(0deg);
             }
         }
 
-        @keyframes snapRight {
+        @keyframes swiperSlideRight {
             0% {
-                opacity: 0.6;
-                transform: perspective(1000px) translateX(-120px) scale(0.9);
+                opacity: 0.5;
+                transform: perspective(1200px) translateX(-80px) translateZ(-50px) scale(0.92) rotateY(15deg);
             }
-
-            70% {
-                opacity: 1;
-                transform: perspective(1000px) translateX(8px) scale(1.01);
-            }
-
             100% {
-                transform: perspective(1000px) translateX(0) scale(1);
+                opacity: 1;
+                transform: perspective(1200px) translateX(0) translateZ(60px) scale(1) rotateY(0deg);
             }
         }
 
-        /* Efecto pop en tarjeta activa */
+        /* Efecto de entrada para tarjeta activa */
         .hcoverflow-active {
-            animation: popIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            animation: swiperActiveIn 0.5s cubic-bezier(0.25, 0.1, 0.25, 1);
         }
 
-        @keyframes popIn {
+        @keyframes swiperActiveIn {
             0% {
                 opacity: 0.7;
-                transform: perspective(1000px) translateX(0) translateZ(-40px) scale(0.92) rotateY(0deg);
+                transform: perspective(1200px) translateX(0) translateZ(-20px) scale(0.9) rotateY(0deg);
             }
-
-            60% {
-                transform: perspective(1000px) translateX(0) translateZ(10px) scale(1.03) rotateY(0deg);
-            }
-
             100% {
                 opacity: 1;
-                transform: perspective(1000px) translateX(0) translateZ(0) scale(1) rotateY(0deg);
+                transform: perspective(1200px) translateX(0) translateZ(60px) scale(1) rotateY(0deg);
+            }
+        }
+
+        /* Animación para tarjetas laterales - aparición más gradual */
+        .hcoverflow-prev {
+            animation: swiperPrevIn 0.7s cubic-bezier(0.4, 0, 0.2, 1) 0.15s both;
+        }
+
+        .hcoverflow-next {
+            animation: swiperNextIn 0.7s cubic-bezier(0.4, 0, 0.2, 1) 0.15s both;
+        }
+
+        @keyframes swiperPrevIn {
+            0% {
+                opacity: 0;
+                transform: perspective(1200px) translateX(-320px) translateZ(-200px) scale(0.6) rotateY(55deg);
+            }
+            40% {
+                opacity: 0.3;
+            }
+            100% {
+                opacity: 0.75;
+                transform: perspective(1200px) translateX(-240px) translateZ(-100px) scale(0.78) rotateY(42deg);
+            }
+        }
+
+        @keyframes swiperNextIn {
+            0% {
+                opacity: 0;
+                transform: perspective(1200px) translateX(320px) translateZ(-200px) scale(0.6) rotateY(-55deg);
+            }
+            40% {
+                opacity: 0.3;
+            }
+            100% {
+                opacity: 0.75;
+                transform: perspective(1200px) translateX(240px) translateZ(-100px) scale(0.78) rotateY(-42deg);
             }
         }
 
@@ -1262,11 +1420,13 @@
             overflow: hidden;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5),
                 0 0 0 1px rgba(255, 255, 255, 0.1);
+            transition: box-shadow 0.5s ease;
         }
 
         .hcoverflow-active .hcoverflow-card-inner {
-            box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.6),
-                0 0 0 2px rgba(59, 130, 246, 0.3);
+            box-shadow: 0 35px 70px -15px rgba(0, 0, 0, 0.7),
+                0 0 0 2px rgba(59, 130, 246, 0.4),
+                0 0 40px rgba(59, 130, 246, 0.15);
         }
 
         .hcoverflow-card-image {
@@ -1280,21 +1440,45 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
-            transition: transform 0.5s ease;
+            transition: transform 0.5s cubic-bezier(0.25, 0.1, 0.25, 1);
         }
 
         .hcoverflow-active .hcoverflow-card-image img:hover {
             transform: scale(1.05);
         }
 
-        .hcoverflow-card-reflection {
+        /* Gradiente sobre la imagen */
+        .hcoverflow-card-gradient {
             position: absolute;
             bottom: 0;
             left: 0;
             right: 0;
-            height: 50%;
-            background: linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.6));
+            height: 40%;
+            background: linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.5));
             pointer-events: none;
+        }
+
+        /* Reflexión inferior estilo Apple/iTunes coverflow */
+        .hcoverflow-card-reflection {
+            position: absolute;
+            bottom: -60%;
+            left: 5%;
+            right: 5%;
+            height: 60%;
+            background: linear-gradient(to bottom,
+                rgba(255, 255, 255, 0.08) 0%,
+                transparent 50%);
+            transform: scaleY(-1) rotateX(180deg);
+            pointer-events: none;
+            opacity: 0.4;
+            filter: blur(2px);
+            border-radius: 24px;
+            mask-image: linear-gradient(to bottom, black 0%, transparent 60%);
+            -webkit-mask-image: linear-gradient(to bottom, black 0%, transparent 60%);
+        }
+
+        .hcoverflow-active .hcoverflow-card-reflection {
+            opacity: 0.5;
         }
 
         .hcoverflow-nutriscore {
@@ -1374,7 +1558,7 @@
             display: flex;
             align-items: center;
             gap: 24px;
-            margin-top: 45px;
+            margin-top: 80px;
         }
 
         .hcoverflow-nav-btn {

@@ -48,6 +48,7 @@ function getProductAtOffset(offset) {
 
 /**
  * Renderiza una tarjeta de producto para el coverflow horizontal
+ * Efecto tipo Swiper.js con sombras proyectadas y reflexión
  */
 function renderCard(product, position) {
     if (!product) {
@@ -57,31 +58,39 @@ function renderCard(product, position) {
     const image = getProductImage(product);
     const nutriColor = nutriscoreColors[product.nutriscore] || '#6b7280';
 
-    // Configuración 3D por posición (horizontal)
+    // Configuración 3D estilo Swiper coverflow (3 posiciones mejoradas)
     const configs = {
-        'prev': { x: -320, scale: 0.75, opacity: 0.6, blur: 2, rotateY: 35, z: -150 },
-        'active': { x: 0, scale: 1, opacity: 1, blur: 0, rotateY: 0, z: 0 },
-        'next': { x: 320, scale: 0.75, opacity: 0.6, blur: 2, rotateY: -35, z: -150 }
+        'prev':   { x: -240, scale: 0.78, opacity: 0.75, blur: 1, rotateY: 42, z: -100, zIndex: 10 },
+        'active': { x: 0, scale: 1, opacity: 1, blur: 0, rotateY: 0, z: 60, zIndex: 50 },
+        'next':   { x: 240, scale: 0.78, opacity: 0.75, blur: 1, rotateY: -42, z: -100, zIndex: 10 }
     };
 
     const c = configs[position] || configs.active;
     const isActive = position === 'active';
 
+    // Sombra proyectada lateral (slide shadow estilo Swiper)
+    const shadowSide = position === 'prev' ? 'right' : 'left';
+
     return `
         <div class="hcoverflow-card hcoverflow-${position}"
              style="
-                transform: perspective(1000px) translateX(${c.x}px) translateZ(${c.z}px) scale(${c.scale}) rotateY(${c.rotateY}deg);
+                transform: perspective(1200px) translateX(${c.x}px) translateZ(${c.z}px) scale(${c.scale}) rotateY(${c.rotateY}deg);
                 opacity: ${c.opacity};
                 filter: blur(${c.blur}px);
-                z-index: ${isActive ? 50 : 10};
+                z-index: ${c.zIndex};
              "
              data-product-id="${product.id}"
              data-position="${position}">
 
+            <!-- Sombra proyectada lateral estilo Swiper -->
+            ${!isActive ? `
+                <div class="hcoverflow-slide-shadow hcoverflow-slide-shadow-${shadowSide}"></div>
+            ` : ''}
+
             <div class="hcoverflow-card-inner">
                 <div class="hcoverflow-card-image">
                     <img src="${image}" alt="${product.name}" loading="lazy">
-                    <div class="hcoverflow-card-reflection"></div>
+                    <div class="hcoverflow-card-gradient"></div>
                 </div>
 
                 <div class="hcoverflow-nutriscore" style="background: ${nutriColor}">
@@ -104,6 +113,9 @@ function renderCard(product, position) {
                     ` : ''}
                 </div>
             </div>
+
+            <!-- Reflexión inferior estilo Apple coverflow -->
+            <div class="hcoverflow-card-reflection"></div>
         </div>
     `;
 }

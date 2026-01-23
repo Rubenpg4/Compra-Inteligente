@@ -384,6 +384,7 @@ function renderProductDetails(product) {
 
 /**
  * Renderiza una tarjeta del carrito coverflow
+ * Efecto tipo Swiper.js con sombras proyectadas y reflexión
  */
 function renderCartCard(item, position) {
     if (!item) {
@@ -392,31 +393,45 @@ function renderCartCard(item, position) {
 
     const image = getProductImage(item);
 
-    // Configuración 3D por posición (horizontal)
+    // Configuración 3D estilo Swiper coverflow
     const configs = {
-        'far-prev': { x: -320, scale: 0.5, opacity: 0.2, blur: 3, rotateY: 45, z: -150 },
-        'prev': { x: -180, scale: 0.75, opacity: 0.6, blur: 1, rotateY: 25, z: -80 },
-        'active': { x: 0, scale: 1, opacity: 1, blur: 0, rotateY: 0, z: 0 },
-        'next': { x: 180, scale: 0.75, opacity: 0.6, blur: 1, rotateY: -25, z: -80 },
-        'far-next': { x: 320, scale: 0.5, opacity: 0.2, blur: 3, rotateY: -45, z: -150 }
+        'far-prev': { x: -280, scale: 0.5, opacity: 0.25, blur: 3, rotateY: 50, z: -180, zIndex: 1 },
+        'prev':     { x: -160, scale: 0.78, opacity: 0.7, blur: 1, rotateY: 38, z: -80, zIndex: 10 },
+        'active':   { x: 0, scale: 1, opacity: 1, blur: 0, rotateY: 0, z: 50, zIndex: 50 },
+        'next':     { x: 160, scale: 0.78, opacity: 0.7, blur: 1, rotateY: -38, z: -80, zIndex: 10 },
+        'far-next': { x: 280, scale: 0.5, opacity: 0.25, blur: 3, rotateY: -50, z: -180, zIndex: 1 }
     };
 
     const c = configs[position] || configs.active;
+    const isActive = position === 'active';
+    const isFar = position === 'far-prev' || position === 'far-next';
+
+    // Sombra proyectada lateral (slide shadow estilo Swiper)
+    const shadowSide = position.includes('prev') ? 'right' : 'left';
 
     return `
         <div class="cart-coverflow-card cart-coverflow-${position}"
              style="
-                transform: perspective(1000px) translateX(${c.x}px) translateZ(${c.z}px) scale(${c.scale}) rotateY(${c.rotateY}deg);
+                transform: perspective(1200px) translateX(${c.x}px) translateZ(${c.z}px) scale(${c.scale}) rotateY(${c.rotateY}deg);
                 opacity: ${c.opacity};
                 filter: blur(${c.blur}px);
-                z-index: ${position === 'active' ? 50 : 10};
+                z-index: ${c.zIndex};
              ">
+
+            <!-- Sombra proyectada lateral estilo Swiper -->
+            ${!isActive ? `
+                <div class="cart-slide-shadow cart-slide-shadow-${shadowSide}"></div>
+            ` : ''}
+
             <div class="cart-coverflow-card-inner">
                 <div class="cart-coverflow-card-image">
                     <img src="${image}" alt="${item.name}">
                     <div class="cart-coverflow-qty">x${item.cartQty}</div>
                 </div>
             </div>
+
+            <!-- Reflexión inferior estilo Apple coverflow -->
+            ${!isFar ? `<div class="cart-coverflow-reflection"></div>` : ''}
         </div>
     `;
 }
