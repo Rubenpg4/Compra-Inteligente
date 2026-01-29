@@ -172,7 +172,7 @@ const categoryImages = {
     snacks: 'https://images.unsplash.com/photo-1621939514649-280e2ee25f60?w=400&h=400&fit=crop',
     drinks: 'https://images.unsplash.com/photo-1625772299848-391b6a87d7b3?w=400&h=400&fit=crop',
     dairy: 'https://images.unsplash.com/photo-1628088062854-d1870b4553da?w=400&h=400&fit=crop',
-    cereals: 'https://images.unsplash.com/photo-1517456215183-9a2c3a748f8c?w=400&h=400&fit=crop'
+    cereals: 'https://images.unsplash.com/photo-1495214783159-3503fd1b572d?w=400&h=400&fit=crop'
 };
 
 const nutriscoreColors = {
