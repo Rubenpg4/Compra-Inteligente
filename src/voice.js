@@ -18,7 +18,9 @@ import {
     setFilterNutriscore,
     clearFilters,
     CATEGORIES,
-    NUTRISCORES
+    NUTRISCORES,
+    acquireActionLock,
+    releaseActionLock
 } from './store.js';
 
 import {
@@ -161,8 +163,19 @@ function setupRecognitionHandlers() {
 function processVoiceCommand(transcript) {
     for (const handler of commandHandlers) {
         if (handler.matches(transcript)) {
-            addLog('voice', `Comando ejecutado: ${handler.name}`);
-            handler.execute(transcript);
+            // Intentar adquirir lock para evitar conflictos con gestos
+            if (!acquireActionLock('voice')) {
+                addLog('voice', `Comando "${handler.name}" bloqueado (gesto en curso)`);
+                return;
+            }
+
+            try {
+                addLog('voice', `Comando ejecutado: ${handler.name}`);
+                handler.execute(transcript);
+            } finally {
+                // Siempre liberar el lock
+                releaseActionLock('voice');
+            }
             return;
         }
     }

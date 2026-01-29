@@ -60,6 +60,101 @@ let state = JSON.parse(JSON.stringify(initialState));
 // Suscriptores para cambios de estado
 const subscribers = new Set();
 
+// ========================================
+// SEMAFORO PARA CONTROL DE CONCURRENCIA
+// Evita conflictos entre comandos de voz y gestos
+// ========================================
+
+const actionLock = {
+    isLocked: false,
+    lockedBy: null,       // 'voice' | 'gesture'
+    lockTime: null,
+    timeout: 300          // ms máximo de bloqueo
+};
+
+/**
+ * Intenta adquirir el lock para ejecutar una acción
+ * @param {string} source - Origen de la acción ('voice' | 'gesture')
+ * @returns {boolean} true si se adquirió el lock
+ */
+export function acquireActionLock(source) {
+    const now = Date.now();
+
+    // Si está bloqueado, verificar timeout
+    if (actionLock.isLocked) {
+        const elapsed = now - actionLock.lockTime;
+
+        // Si excedió el timeout, liberar automáticamente
+        if (elapsed > actionLock.timeout) {
+            console.warn(`[Store] Lock timeout - liberando lock de ${actionLock.lockedBy}`);
+            actionLock.isLocked = false;
+            actionLock.lockedBy = null;
+            actionLock.lockTime = null;
+        } else {
+            // Lock activo, denegar
+            console.log(`[Store] Acción bloqueada: ${source} (lock por ${actionLock.lockedBy})`);
+            return false;
+        }
+    }
+
+    // Adquirir lock
+    actionLock.isLocked = true;
+    actionLock.lockedBy = source;
+    actionLock.lockTime = now;
+
+    return true;
+}
+
+/**
+ * Libera el lock de acción
+ * @param {string} source - Origen que intenta liberar
+ */
+export function releaseActionLock(source) {
+    // Solo el que adquirió puede liberar
+    if (actionLock.lockedBy === source) {
+        actionLock.isLocked = false;
+        actionLock.lockedBy = null;
+        actionLock.lockTime = null;
+    }
+}
+
+/**
+ * Verifica si hay un lock activo
+ * @returns {boolean}
+ */
+export function isActionLocked() {
+    // Verificar timeout también al consultar
+    if (actionLock.isLocked) {
+        const elapsed = Date.now() - actionLock.lockTime;
+        if (elapsed > actionLock.timeout) {
+            actionLock.isLocked = false;
+            actionLock.lockedBy = null;
+            actionLock.lockTime = null;
+            return false;
+        }
+    }
+    return actionLock.isLocked;
+}
+
+/**
+ * Ejecuta una acción con control de concurrencia
+ * @param {string} source - Origen ('voice' | 'gesture')
+ * @param {Function} action - Función a ejecutar
+ * @returns {boolean} true si se ejecutó correctamente
+ */
+export function executeWithLock(source, action) {
+    if (!acquireActionLock(source)) {
+        return false;
+    }
+
+    try {
+        action();
+        return true;
+    } finally {
+        releaseActionLock(source);
+    }
+}
+
 /**
  * Obtiene el estado actual (copia inmutable)
  * @returns {Object} Estado actual
@@ -342,6 +437,10 @@ export default {
     clearFilters,
     getFilteredProducts,
     setCartActiveIndex,
+    acquireActionLock,
+    releaseActionLock,
+    isActionLocked,
+    executeWithLock,
     MODES,
     CATEGORIES,
     NUTRISCORES

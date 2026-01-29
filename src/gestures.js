@@ -13,7 +13,9 @@ import {
     decreaseCartItem,
     addLog,
     MODES,
-    setCartActiveIndex
+    setCartActiveIndex,
+    acquireActionLock,
+    releaseActionLock
 } from './store.js';
 
 import { next as coverflowNext, prev as coverflowPrev, getActiveProduct, triggerAddAnimation } from './components/horizontalCoverflow.js';
@@ -986,28 +988,41 @@ async function processFrame() {
                     updateLegendHighlight(currentFrameGesture, progress);
 
                     if (elapsed >= GESTURE_HOLD_DURATION) {
-                        // GESTO CONFIRMADO TRAS 2s - Mostrar éxito
-                        showGestureSuccess(currentFrameGesture);
-                        gestureJustSucceeded = true; // Marcar que acaba de tener éxito
-                        switch (currentFrameGesture) {
-                            case 'Italian':
-                                executeItalianAction(elementUnderCursor);
-                                break;
-                            case 'Thumb_Up':
-                                executeConfirmAction(elementUnderCursor, cursorPos);
-                                break;
-                            case 'Thumb_Down':
-                                executeRemoveAction(elementUnderCursor, cursorPos);
-                                break;
-                            case 'Open_Palm':
-                                executeStopAction();
-                                break;
-                            case 'Victory':
-                                executeVictoryAction();
-                                break;
-                            case 'Closed_Fist':
-                                executeClosedFistAction();
-                                break;
+                        // Intentar adquirir lock para evitar conflictos con comandos de voz
+                        if (!acquireActionLock('gesture')) {
+                            // Lock ocupado por voz, esperar
+                            addLog('gesture', `Gesto "${currentFrameGesture}" bloqueado (voz en curso)`);
+                            pendingGestureStart = now; // Reiniciar el contador
+                            return;
+                        }
+
+                        try {
+                            // GESTO CONFIRMADO TRAS 2s - Mostrar éxito
+                            showGestureSuccess(currentFrameGesture);
+                            gestureJustSucceeded = true; // Marcar que acaba de tener éxito
+                            switch (currentFrameGesture) {
+                                case 'Italian':
+                                    executeItalianAction(elementUnderCursor);
+                                    break;
+                                case 'Thumb_Up':
+                                    executeConfirmAction(elementUnderCursor, cursorPos);
+                                    break;
+                                case 'Thumb_Down':
+                                    executeRemoveAction(elementUnderCursor, cursorPos);
+                                    break;
+                                case 'Open_Palm':
+                                    executeStopAction();
+                                    break;
+                                case 'Victory':
+                                    executeVictoryAction();
+                                    break;
+                                case 'Closed_Fist':
+                                    executeClosedFistAction();
+                                    break;
+                            }
+                        } finally {
+                            // Siempre liberar el lock
+                            releaseActionLock('gesture');
                         }
 
                         // Reset tras éxito con delay para evitar reinicio inmediato en la mitad
@@ -1035,11 +1050,20 @@ async function processFrame() {
             // Swipe es un movimiento, no una pose estática.
             const swipeDir = detectSwipe(landmarks);
             if (swipeDir) {
-                executeSwipeAction(swipeDir);
+                // Intentar adquirir lock para evitar conflictos con comandos de voz
+                if (acquireActionLock('gesture')) {
+                    try {
+                        executeSwipeAction(swipeDir);
 
-                // Mostrar éxito en el legend item de Swipe correspondiente
-                const swipeGestureName = swipeDir === 'left' ? 'Swipe_Left' : 'Swipe_Right';
-                showGestureSuccess(swipeGestureName);
+                        // Mostrar éxito en el legend item de Swipe correspondiente
+                        const swipeGestureName = swipeDir === 'left' ? 'Swipe_Left' : 'Swipe_Right';
+                        showGestureSuccess(swipeGestureName);
+                    } finally {
+                        releaseActionLock('gesture');
+                    }
+                } else {
+                    addLog('gesture', `Swipe bloqueado (voz en curso)`);
+                }
 
                 // Resetear hold si hay movimiento brusco
                 pendingGesture = null;
