@@ -44,6 +44,7 @@ function initElements() {
     els.totalAmount = document.getElementById('total-amount');
     els.cartCount = document.getElementById('cart-count');
     els.btnStartDemo = document.getElementById('btn-start-demo');
+    els.btnMicrophone = document.getElementById('btn-microphone');
     els.btnBack = document.getElementById('btn-back');
     els.btnBackCart = document.getElementById('btn-back-cart');
     els.btnCart = document.getElementById('btn-cart');
@@ -686,15 +687,31 @@ function onStateChange(state, prevState) {
             els.btnStartDemo.querySelector('span').textContent = 'Cámara';
         }
     }
+
+    // Boton micrófono
+    if (els.btnMicrophone) {
+        if (state.services?.voiceActive) {
+            els.btnMicrophone.classList.add('active');
+            els.btnMicrophone.querySelector('span').textContent = 'Voz activa';
+        } else {
+            els.btnMicrophone.classList.remove('active');
+            els.btnMicrophone.querySelector('span').textContent = 'Voz';
+        }
+    }
 }
 
 /**
  * Configura event listeners
  */
-function setupEventListeners(onStartDemo) {
-    // Boton voz
+function setupEventListeners(onStartDemo, onToggleMicrophone) {
+    // Boton camara
     if (els.btnStartDemo && onStartDemo) {
         els.btnStartDemo.addEventListener('click', onStartDemo);
+    }
+
+    // Boton microfono
+    if (els.btnMicrophone && onToggleMicrophone) {
+        els.btnMicrophone.addEventListener('click', onToggleMicrophone);
     }
 
     // Boton volver
@@ -772,9 +789,9 @@ export function showLoadingStatus(service) {
 /**
  * Inicializa UI
  */
-export function initUI(onStartDemo) {
+export function initUI(onStartDemo, onToggleMicrophone) {
     initElements();
-    setupEventListeners(onStartDemo);
+    setupEventListeners(onStartDemo, onToggleMicrophone);
     subscribe(onStateChange);
 
     const state = getState();

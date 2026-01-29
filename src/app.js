@@ -6,7 +6,7 @@
 
 import { setState, setProducts, addLog, getState } from './store.js';
 import { initUI, showLoadingStatus } from './ui.js';
-import { initVoice, requestMicrophonePermission, startListening, isSupported as isVoiceSupported } from './voice.js';
+import { initVoice, requestMicrophonePermission, startListening, stopListening, isSupported as isVoiceSupported, isActive as isVoiceActive } from './voice.js';
 import { init as initGesturesModule, startDetection, isSupported as isGesturesSupported, stopCamera } from './gestures.js';
 
 // Version de la aplicacion
@@ -81,7 +81,6 @@ async function initMultimodalServices() {
     }
 
     // Inicializar modulo de gestos (camara + modelo MediaPipe)
-    // Inicializar modulo de gestos (camara + modelo MediaPipe)
     if (isGesturesSupported()) {
         showLoadingStatus('camera');
         showLoadingStatus('model');
@@ -99,6 +98,44 @@ async function initMultimodalServices() {
     }
 
     return results;
+}
+
+// Estado del micrófono
+let voiceInitialized = false;
+
+/**
+ * Handler para el botón de micrófono
+ * Activa/desactiva el reconocimiento de voz
+ */
+async function onToggleMicrophone() {
+    if (isVoiceActive()) {
+        // Desactivar voz
+        stopListening();
+        addLog('system', 'Reconocimiento de voz desactivado');
+    } else {
+        // Activar voz
+        if (!voiceInitialized) {
+            // Primera vez: inicializar
+            if (isVoiceSupported()) {
+                const voiceOk = await initVoice();
+                if (voiceOk) {
+                    const micOk = await requestMicrophonePermission();
+                    if (micOk) {
+                        await startListening();
+                        voiceInitialized = true;
+                        addLog('system', 'Reconocimiento de voz activado');
+                        addLog('system', 'Di "ayuda" para ver comandos disponibles');
+                    }
+                }
+            } else {
+                addLog('error', 'Web Speech API no disponible en este navegador');
+            }
+        } else {
+            // Ya inicializado, solo reanudar
+            await startListening();
+            addLog('system', 'Reconocimiento de voz activado');
+        }
+    }
 }
 
 /**
@@ -213,7 +250,7 @@ async function main() {
     console.log('[App] Productos cargados:', products?.length);
 
     // Inicializar UI (esto configura los event listeners y renderiza)
-    initUI(onStartDemo);
+    initUI(onStartDemo, onToggleMicrophone);
 
     // Intentar registrar Service Worker (en background)
     registerServiceWorker();

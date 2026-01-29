@@ -9,6 +9,9 @@ import {
     setMode,
     setServiceStatus,
     addToCart,
+    removeFromCart,
+    decreaseCartItem,
+    setCartActiveIndex,
     addLog,
     MODES,
     setFilterCategory,
@@ -25,11 +28,14 @@ import {
     addActiveToCart as coverflowAddToCart
 } from './components/horizontalCoverflow.js';
 
+import { isGridViewActive, triggerDetailAddAnimation, showFeedback, handleCheckoutSuccess } from './ui.js';
+
 // Instancia del reconocedor de voz
 let recognition = null;
 
 // Estado del modulo
 let isListening = false;
+let shouldBeListening = false; // Flag para reinicio automático
 let commandHandlers = [];
 
 // Configuracion por defecto
@@ -98,16 +104,27 @@ function setupRecognitionHandlers() {
 
     recognition.onend = () => {
         isListening = false;
-        setServiceStatus('voiceActive', false);
 
-        // Reiniciar automaticamente si la demo sigue activa
-        const state = getState();
-        if (state.demoStarted && state.services.microphone) {
-            setTimeout(() => {
-                if (state.demoStarted) {
-                    startListening();
+        // Reiniciar automáticamente si debería seguir escuchando
+        if (shouldBeListening) {
+            // Función de reinicio con reintento
+            const restart = (attempt = 0) => {
+                if (!shouldBeListening || attempt > 3) return;
+
+                try {
+                    recognition.start();
+                    isListening = true;
+                    setServiceStatus('voiceActive', true);
+                } catch (e) {
+                    // Si falla, reintentar con más delay
+                    setTimeout(() => restart(attempt + 1), 100);
                 }
-            }, 100);
+            };
+
+            // Iniciar reinicio inmediato
+            setTimeout(restart, 30);
+        } else {
+            setServiceStatus('voiceActive', false);
         }
     };
 
@@ -123,12 +140,17 @@ function setupRecognitionHandlers() {
     };
 
     recognition.onerror = (event) => {
-        if (event.error === 'no-speech') {
-            // Ignorar errores de "no se detecto voz"
+        // Ignorar errores comunes que no afectan el funcionamiento
+        if (event.error === 'no-speech' || event.error === 'aborted') {
             return;
         }
-        addLog('error', `Error de voz: ${event.error}`);
-        setServiceStatus('voiceActive', false);
+
+        // Solo mostrar error si es relevante
+        if (event.error !== 'network') {
+            addLog('error', `Error de voz: ${event.error}`);
+        }
+
+        // No desactivar el servicio, dejar que onend maneje el reinicio
     };
 }
 
@@ -181,17 +203,23 @@ function registerDefaultCommands() {
                    text.includes('adelante');
         },
         execute: () => {
-            console.log('[Voice] Ejecutando comando SIGUIENTE');
             const state = getState();
-            console.log('[Voice] Estado:', state.currentMode, 'Filtros:', state.filters);
-            // Solo funciona en modo browse con filtros activos (coverflow)
-            if (state.currentMode === MODES.BROWSE &&
-                (state.filters?.category || state.filters?.nutriscore)) {
-                const result = coverflowNext();
-                console.log('[Voice] coverflowNext resultado:', result);
+            // Funciona en modo browse con vista coverflow (no grid)
+            if (state.currentMode === MODES.BROWSE && !isGridViewActive()) {
+                coverflowNext();
                 addLog('voice', 'Navegando al siguiente producto');
+            }
+            // También funciona en el carrito
+            else if (state.currentMode === MODES.CART && state.cart.length > 0) {
+                const newIndex = state.cartActiveIndex + 1;
+                if (newIndex < state.cart.length) {
+                    setCartActiveIndex(newIndex);
+                    addLog('voice', 'Navegando al siguiente en carrito');
+                } else {
+                    addLog('voice', 'Ya estás en el último producto del carrito');
+                }
             } else {
-                addLog('voice', 'Comando "siguiente" solo disponible en vista filtrada');
+                addLog('voice', 'Comando "siguiente" disponible en coverflow o carrito');
             }
         }
     });
@@ -202,19 +230,26 @@ function registerDefaultCommands() {
         matches: (text) => {
             return text.includes('anterior') ||
                    text.includes('previo') ||
-                   text.includes('atrás') ||
-                   text.includes('atras') ||
                    text.includes('retroceder');
         },
         execute: () => {
             const state = getState();
-            // Solo funciona en modo browse con filtros activos (coverflow)
-            if (state.currentMode === MODES.BROWSE &&
-                (state.filters?.category || state.filters?.nutriscore)) {
+            // Funciona en modo browse con vista coverflow (no grid)
+            if (state.currentMode === MODES.BROWSE && !isGridViewActive()) {
                 coverflowPrev();
                 addLog('voice', 'Navegando al producto anterior');
+            }
+            // También funciona en el carrito
+            else if (state.currentMode === MODES.CART && state.cart.length > 0) {
+                const newIndex = state.cartActiveIndex - 1;
+                if (newIndex >= 0) {
+                    setCartActiveIndex(newIndex);
+                    addLog('voice', 'Navegando al anterior en carrito');
+                } else {
+                    addLog('voice', 'Ya estás en el primer producto del carrito');
+                }
             } else {
-                addLog('voice', 'Comando "anterior" solo disponible en vista filtrada');
+                addLog('voice', 'Comando "anterior" disponible en coverflow o carrito');
             }
         }
     });
@@ -232,13 +267,24 @@ function registerDefaultCommands() {
         },
         execute: () => {
             const state = getState();
-            // Solo funciona en modo browse con filtros activos (coverflow)
-            if (state.currentMode === MODES.BROWSE &&
-                (state.filters?.category || state.filters?.nutriscore)) {
+
+            // En coverflow (browse), abrir detalles del producto activo
+            if (state.currentMode === MODES.BROWSE && !isGridViewActive()) {
                 coverflowSelectActive();
                 addLog('voice', 'Abriendo detalles del producto');
-            } else {
-                addLog('voice', 'Comando "detalles" solo disponible en vista filtrada');
+            }
+            // En carrito, abrir detalles del producto activo del carrito
+            else if (state.currentMode === MODES.CART && state.cart.length > 0) {
+                const currentItem = state.cart[state.cartActiveIndex];
+                if (currentItem) {
+                    // Buscar el producto original en la lista de productos
+                    const product = state.products.find(p => p.id === currentItem.id) || currentItem;
+                    setMode(MODES.DETAILS, { product });
+                    addLog('voice', `Viendo detalles de "${currentItem.name}"`);
+                }
+            }
+            else {
+                addLog('voice', 'Comando "detalles" disponible en coverflow o carrito');
             }
         }
     });
@@ -249,11 +295,52 @@ function registerDefaultCommands() {
         matches: (text) => {
             return text.includes('productos') ||
                    text.includes('catalogo') ||
-                   text.includes('inicio') ||
-                   text.includes('volver');
+                   text.includes('inicio');
         },
         execute: () => {
             setMode(MODES.BROWSE);
+            showFeedback('TIENDA', 'info');
+        }
+    });
+
+    // Comando: Atrás (Smart Back - igual que gesto Open_Palm)
+    registerCommand({
+        name: 'atrás',
+        matches: (text) => {
+            return text.includes('atrás') ||
+                   text.includes('atras') ||
+                   text.includes('volver') ||
+                   text.includes('regresar') ||
+                   text.includes('salir');
+        },
+        execute: () => {
+            const state = getState();
+
+            if (state.currentMode === MODES.CART) {
+                setMode(MODES.BROWSE);
+                showFeedback('VOLVER A TIENDA', 'warning');
+                addLog('voice', 'Volviendo a la tienda');
+            }
+            else if (state.currentMode === MODES.DETAILS) {
+                // Smart Back: Si venimos del carrito, volver al carrito
+                if (state.previousMode === MODES.CART) {
+                    setMode(MODES.CART);
+                    showFeedback('VOLVER AL CARRITO', 'warning');
+                    addLog('voice', 'Volviendo al carrito');
+                } else {
+                    setMode(MODES.BROWSE);
+                    showFeedback('VOLVER A TIENDA', 'warning');
+                    addLog('voice', 'Volviendo a la tienda');
+                }
+            }
+            else if (state.currentMode === MODES.CHECKOUT) {
+                setMode(MODES.CART);
+                showFeedback('CANCELADO', 'error');
+                addLog('voice', 'Compra cancelada, volviendo al carrito');
+            }
+            else {
+                addLog('voice', 'Ya estás en la vista principal');
+            }
         }
     });
 
@@ -288,6 +375,7 @@ function registerDefaultCommands() {
         matches: (text) => {
             return text.includes('agregar') ||
                    text.includes('anadir') ||
+                   text.includes('añadir') ||
                    text.includes('comprar');
         },
         execute: () => {
@@ -296,9 +384,16 @@ function registerDefaultCommands() {
             // Si estamos en detalles, agregar el producto actual
             if (state.currentMode === MODES.DETAILS && state.selectedProduct) {
                 addToCart(state.selectedProduct);
-            } else if (state.currentMode === MODES.BROWSE && state.products.length > 0) {
-                // En browse, agregar el primer producto como demo
-                addToCart(state.products[0]);
+                triggerDetailAddAnimation();
+                addLog('voice', `"${state.selectedProduct.name}" añadido al carrito`);
+            } else if (state.currentMode === MODES.BROWSE && !isGridViewActive()) {
+                // En coverflow, agregar el producto activo
+                const added = coverflowAddToCart();
+                if (added) {
+                    showFeedback('AÑADIDO AL CARRITO', 'success');
+                }
+            } else {
+                addLog('voice', 'Usa este comando en la vista de detalles o coverflow');
             }
         }
     });
@@ -407,6 +502,120 @@ function registerDefaultCommands() {
         }
     });
 
+    // ========================================
+    // COMANDOS DE CARRITO
+    // ========================================
+
+    // Comando: Quitar del carrito
+    registerCommand({
+        name: 'quitar del carrito',
+        matches: (text) => {
+            return text.includes('quitar') ||
+                   text.includes('eliminar') ||
+                   text.includes('borrar') ||
+                   text.includes('sacar');
+        },
+        execute: () => {
+            const state = getState();
+
+            if (state.currentMode === MODES.CART && state.cart.length > 0) {
+                const currentItem = state.cart[state.cartActiveIndex];
+                if (currentItem) {
+                    // Decrementar cantidad o eliminar si es 1
+                    if (currentItem.cartQty > 1) {
+                        decreaseCartItem(currentItem);
+                        showFeedback(`-1 ${currentItem.name}`, 'warning');
+                        addLog('voice', `Reducida cantidad de "${currentItem.name}"`);
+                    } else {
+                        removeFromCart(currentItem.id);
+                        showFeedback('ELIMINADO', 'error');
+                        addLog('voice', `"${currentItem.name}" eliminado del carrito`);
+                    }
+                }
+            } else {
+                addLog('voice', 'Usa este comando en la vista del carrito');
+            }
+        }
+    });
+
+    // Comando: Finalizar compra
+    registerCommand({
+        name: 'finalizar compra',
+        matches: (text) => {
+            return text.includes('finalizar') ||
+                   text.includes('terminar') ||
+                   text.includes('pagar') ||
+                   text.includes('checkout') ||
+                   text.includes('confirmar compra');
+        },
+        execute: () => {
+            const state = getState();
+
+            if (state.cart.length === 0) {
+                addLog('voice', 'El carrito está vacío');
+                return;
+            }
+
+            if (state.currentMode === MODES.CART) {
+                // Ir al checkout
+                setMode(MODES.CHECKOUT);
+                addLog('voice', 'Mostrando confirmación de compra');
+            } else if (state.currentMode === MODES.CHECKOUT) {
+                // Confirmar la compra
+                handleCheckoutSuccess();
+                addLog('voice', '¡Compra realizada con éxito!');
+            } else {
+                // Desde cualquier vista, ir al carrito primero
+                setMode(MODES.CART);
+                addLog('voice', 'Ve al carrito y di "finalizar" para comprar');
+            }
+        }
+    });
+
+    // Comando: Cancelar compra (en checkout)
+    registerCommand({
+        name: 'cancelar',
+        matches: (text) => {
+            return text.includes('cancelar') ||
+                   text.includes('no') ||
+                   text.includes('rechazar');
+        },
+        execute: () => {
+            const state = getState();
+
+            if (state.currentMode === MODES.CHECKOUT) {
+                setMode(MODES.CART);
+                showFeedback('CANCELADO', 'error');
+                addLog('voice', 'Compra cancelada');
+            } else {
+                addLog('voice', 'Comando "cancelar" solo disponible en confirmación de compra');
+            }
+        }
+    });
+
+    // Comando: Aceptar compra (en checkout)
+    registerCommand({
+        name: 'aceptar',
+        matches: (text) => {
+            return text.includes('aceptar') ||
+                   text.includes('confirmar') ||
+                   text.includes('sí') ||
+                   text.includes('si') ||
+                   text.includes('ok') ||
+                   text.includes('vale');
+        },
+        execute: () => {
+            const state = getState();
+
+            if (state.currentMode === MODES.CHECKOUT) {
+                handleCheckoutSuccess();
+                addLog('voice', '¡Compra realizada con éxito!');
+            } else {
+                addLog('voice', 'Comando "aceptar" solo disponible en confirmación de compra');
+            }
+        }
+    });
+
     // Comando: Ayuda
     registerCommand({
         name: 'ayuda',
@@ -420,14 +629,21 @@ function registerDefaultCommands() {
             addLog('system', '- "ver productos" - Ver catalogo');
             addLog('system', '- "ver [producto]" - Ver detalles');
             addLog('system', '- "agregar" - Agregar al carrito');
+            addLog('system', '- "atrás/volver" - Volver a vista anterior');
             addLog('system', '-- FILTROS --');
             addLog('system', '- "snacks/bebidas/lacteos/cereales" - Filtrar categoria');
             addLog('system', '- "saludable" o "letra A/B/C/D/E" - Filtrar nutriscore');
             addLog('system', '- "mostrar todo" - Limpiar filtros');
-            addLog('system', '-- COVERFLOW (vista filtrada) --');
+            addLog('system', '-- COVERFLOW/CARRITO --');
             addLog('system', '- "siguiente" - Siguiente producto');
             addLog('system', '- "anterior" - Producto anterior');
             addLog('system', '- "detalles" - Ver detalles del producto');
+            addLog('system', '-- CARRITO --');
+            addLog('system', '- "quitar" - Quitar producto del carrito');
+            addLog('system', '- "finalizar" - Ir a confirmación de compra');
+            addLog('system', '-- CONFIRMACIÓN --');
+            addLog('system', '- "aceptar/sí/confirmar" - Confirmar compra');
+            addLog('system', '- "cancelar/no" - Cancelar compra');
         }
     });
 }
@@ -457,6 +673,8 @@ export async function startListening() {
         return false;
     }
 
+    shouldBeListening = true;
+
     if (isListening) {
         return true;
     }
@@ -474,6 +692,7 @@ export async function startListening() {
  * Detiene el reconocimiento de voz
  */
 export function stopListening() {
+    shouldBeListening = false;
     if (recognition && isListening) {
         recognition.stop();
         isListening = false;

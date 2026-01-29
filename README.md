@@ -43,6 +43,52 @@ El sistema reconoce 7 gestos distintos, cada uno mapeado a una acción específi
 - **Italian Gesture** - Acción especial (añadir x2), detectado con algoritmo personalizado
 - **Swipe Horizontal** - Navegación entre productos con sistema de histéresis dinámica
 
+## Comandos de Voz Implementados
+
+El sistema de reconocimiento de voz permite control completo de la aplicación mediante comandos en español:
+
+### Navegación General
+| Comando | Alternativas | Acción |
+|---------|--------------|--------|
+| ver carrito | abrir carrito, mostrar carrito | Abre la vista del carrito |
+| ver productos | catálogo, inicio | Vuelve a la vista de productos |
+| atrás | volver, regresar, salir | Smart Back: vuelve a la vista anterior contextualmente |
+
+### Navegación Coverflow/Carrito
+| Comando | Alternativas | Acción |
+|---------|--------------|--------|
+| siguiente | próximo, avanzar, adelante | Navega al siguiente producto (funciona en coverflow y carrito) |
+| anterior | previo, retroceder | Navega al producto anterior (funciona en coverflow y carrito) |
+| detalles | ver detalles, más información, seleccionar | Abre detalles del producto activo (desde coverflow o carrito) |
+
+### Gestión del Carrito
+| Comando | Alternativas | Acción |
+|---------|--------------|--------|
+| agregar | añadir, comprar | Añade el producto actual al carrito |
+| quitar | eliminar, borrar, sacar | Reduce cantidad o elimina del carrito |
+| finalizar | terminar, pagar, checkout | Va a la pantalla de confirmación |
+
+### Confirmación de Compra
+| Comando | Alternativas | Acción |
+|---------|--------------|--------|
+| aceptar | confirmar, sí, ok, vale | Confirma y realiza la compra |
+| cancelar | no, rechazar | Cancela la compra y vuelve al carrito |
+
+### Filtros
+| Comando | Alternativas | Acción |
+|---------|--------------|--------|
+| snacks | aperitivos, botanas | Filtra por categoría snacks |
+| bebidas | drinks, refrescos | Filtra por categoría bebidas |
+| lácteos | dairy, leche, yogur, queso | Filtra por categoría lácteos |
+| cereales | cereals, cereal | Filtra por categoría cereales |
+| saludable | letra A/B/C/D/E | Filtra por nutriscore |
+| mostrar todo | limpiar filtros, ver todo | Elimina todos los filtros |
+
+### Utilidades
+| Comando | Alternativas | Acción |
+|---------|--------------|--------|
+| ayuda | comandos | Muestra lista de comandos disponibles |
+
 ## Características Técnicas
 
 ### Detección de Gestos
@@ -50,6 +96,14 @@ El sistema reconoce 7 gestos distintos, cada uno mapeado a una acción específi
 - Sistema de cooldowns independientes por gesto para evitar activaciones accidentales
 - Algoritmo de histéresis dinámica para swipes que previene falsos positivos por retroceso de mano
 - Detección de estabilidad (zero-velocity) para reseteo automático del sistema
+
+### Reconocimiento de Voz
+- Basado en Web Speech API (webkitSpeechRecognition)
+- Reconocimiento continuo con reinicio automático y sistema de reintentos
+- Botón dedicado para activar/desactivar voz independientemente de la cámara
+- Comandos contextuales según la vista activa (BROWSE, CART, DETAILS, CHECKOUT)
+- Feedback visual en el botón de micrófono (estado activo/inactivo)
+- Soporte para múltiples variantes de cada comando (sinónimos)
 
 ### Gestión de Estado
 - Store centralizado con notificación reactiva a suscriptores
@@ -61,6 +115,9 @@ El sistema reconoce 7 gestos distintos, cada uno mapeado a una acción específi
 - Animaciones CSS con curvas de Bézier personalizadas
 - Feedback visual en leyenda de gestos (progreso, éxito, fallo)
 - Cursor virtual que sigue la posición de la mano
+- Botones independientes para cámara (gestos) y micrófono (voz) en el header
+- Indicadores de estado activo con cambio de color (verde cuando activo)
+- Animación de "añadir al carrito" para feedback visual en comandos de voz
 
 ## Datos
 
@@ -71,7 +128,8 @@ El catálogo incluye 50 productos alimenticios reales distribuidos en:
 ## Limitaciones Conocidas
 
 - Requiere buena iluminación para detección óptima de gestos
-- Mejor rendimiento en Chrome/Edge por soporte completo de APIs
+- Mejor rendimiento en Chrome/Edge por soporte completo de APIs (Web Speech API y MediaPipe)
+- El reconocimiento de voz requiere conexión a internet (usa servidores de Google)
 - Sin persistencia de carrito entre sesiones
 - Service Worker pendiente de implementación
 
